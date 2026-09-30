@@ -1,0 +1,8 @@
+{
+  "name": "FarmHub - Modern Agriculture Management & Marketplace",
+  "description": "Comprehensive farm management platform featuring field monitoring, crop planning, live mandi market prices, produce marketplace, soil fertilizer calculator, and pest diagnosis.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
