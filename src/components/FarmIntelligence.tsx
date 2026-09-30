@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FarmProfileData, CropIntelligenceData } from '../types/farmhub';
+import { FarmProfileData, CropIntelligenceData, PageId } from '../types/farmhub';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   generateRecommendations, 
@@ -19,7 +19,18 @@ import {
   DollarSign, 
   RefreshCw,
   Sliders,
-  Info
+  Info,
+  ShieldAlert,
+  ArrowUpRight,
+  HelpCircle,
+  Cpu,
+  Calculator,
+  ShoppingBag,
+  Stethoscope,
+  BarChart3,
+  Check,
+  Zap,
+  Flame
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -33,9 +44,10 @@ import {
 
 interface FarmIntelligenceProps {
   farmProfile: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
 }
 
-export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile }) => {
+export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile, setCurrentPage }) => {
   const { language, t } = useLanguage();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -47,30 +59,40 @@ export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile 
     generateRecommendations(farmProfile, 0)
   );
 
-  // Recalculate when profile or adoption shift changes
+  // Dynamic recalculation when farmProfile or adoptionShift changes
   useEffect(() => {
     const res = generateRecommendations(farmProfile, adoptionShift);
     setIntelResult(res);
   }, [farmProfile, adoptionShift]);
 
+  const pipelineStages = [
+    { step: '1', title: 'Farm Profile', sub: `${farmProfile.farmArea} Acres • ${farmProfile.soilType}` },
+    { step: '2', title: 'Suitability', sub: 'Soil & Water Match' },
+    { step: '3', title: 'Supply + Demand', sub: 'Regional Index' },
+    { step: '4', title: 'Price Elasticity', sub: 'Elastic Price Model' },
+    { step: '5', title: 'Profit Range', sub: 'Revenue − Cost' },
+    { step: '6', title: 'Risk Penalty', sub: 'Weather & Glut' },
+    { step: '7', title: 'Ranked Choice', sub: 'Top 3 Output' }
+  ];
+
   const pipelineStepsEn = [
-    '1. Ingesting Farm Profile & Loamy Soil Baseline',
-    '2. Calculating Soil & Environmental Suitability',
-    '3. Incorporating IMD Weather & Microclimate',
-    '4. Querying Regional Mandi Supply & Processing Demand',
-    '5. Running Elastic Price & Input Cost Simulation',
-    '6. Estimating 5-Acre Net Profit Margin Range',
-    '7. Applying Multi-Factor Risk Penalty & Ranking'
+    '1. Ingesting Farm Profile & Soil Parameters',
+    '2. Calculating Soil & Water Suitability Score',
+    '3. Evaluating Previous Crop Rotation Synergy',
+    '4. Querying Regional Supply & Market Demand Indexes',
+    '5. Running Price Elasticity & Production Cost Calculation',
+    '6. Estimating Total Net Profit Margin Range',
+    '7. Applying Volatility & Risk Penalties to Rank Top Crops'
   ];
 
   const pipelineStepsHi = [
-    '१. ५ एकड़ खेत प्रोफ़ाइल और दोमट मिट्टी डेटा इनपुट',
-    '२. मिट्टी एवं जलवायु अनुकूलता स्कोर गणना',
-    '३. मौसम विभाग की वर्षा व तापमान परिस्थितियों का समावेशन',
-    '४. क्षेत्रीय आगरा मंडी आवक एवं क्रशिंग मांग का मिलान',
-    '५. बीज/खाद लागत और गतिशील बाजार भाव सिमुलेशन',
-    '६. ५ एकड़ कुल शुद्ध मुनाफा रेंज का आकलन',
-    '७. समग्र जोखिम कटौती और शीर्ष ३ फसलों की रैंकिंग'
+    '१. खेत प्रोफ़ाइल एवं मिट्टी मापदंड इनपुट',
+    '२. मिट्टी व जल उपयुक्तता स्कोर की गणना',
+    '३. पूर्व फसल चक्र लाभ का मूल्यांकन',
+    '४. क्षेत्रीय आगरा मंडी आवक व मांग सूचकांक मिलान',
+    '५. मूल्य लोच व उत्पादन लागत गणना',
+    '६. कुल शुद्ध मुनाफा रेंज का आकलन',
+    '७. जोखिम कटौती लागू कर शीर्ष ३ फसलों की रैंकिंग'
   ];
 
   const pipelineSteps = language === 'hi' ? pipelineStepsHi : pipelineStepsEn;
@@ -91,128 +113,353 @@ export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile 
           setHasAnalyzed(true);
         }, 500);
       }
-    }, 400);
+    }, 350);
   };
 
-  // Prepare chart data for Recharts
+  // Recharts preparation
   const chartData = intelResult.allRankedCrops.slice(0, 5).map(c => ({
     name: language === 'hi' ? c.hindiName : c.name.split(' ')[0],
     SupplyIndex: c.currentRegionalSupplyIndex,
     DemandIndex: c.currentRegionalDemandIndex,
-    MinProfit: Math.round((c.expectedProfitMin || 0) / 1000), // in Thousands
+    MinProfit: Math.round((c.expectedProfitMin || 0) / 1000),
     MaxProfit: Math.round((c.expectedProfitMax || 0) / 1000)
   }));
 
+  const topCrop = intelResult.topRecommendations[0];
+
   return (
     <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-800/80 border border-emerald-500/30 text-xs font-bold text-emerald-200">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>{language === 'hi' ? 'बहु-कारकीय वैज्ञानिक अनुकूलन' : 'Multi-Factor Algorithmic Optimization'}</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black">
-              {t.intelHeaderTitle}
-            </h1>
-            <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-normal">
-              {t.intelHeaderDesc}
-            </p>
+      
+      {/* 1. TOP VISUAL PRIORITY: #1 TOP RECOMMENDATION HERO CARD */}
+      <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-green-950 text-white rounded-3xl p-6 sm:p-10 shadow-2xl border-2 border-emerald-500/60 relative overflow-hidden space-y-6">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        {/* Top Badge & Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-800/80 pb-4">
+          <div className="flex items-center space-x-2">
+            <span className="px-3.5 py-1 rounded-full bg-emerald-500 text-emerald-950 font-black text-xs uppercase tracking-wider shadow-md flex items-center space-x-1">
+              <Sparkles className="w-3.5 h-3.5 fill-current" />
+              <span>{t.topChoiceTag}</span>
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-emerald-200">
+              {t.demoDataBadge}
+            </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex items-center space-x-3 text-xs">
+            <span className="text-emerald-200 font-semibold">
+              {language === 'hi' ? 'एल्गोरिदम अंक:' : 'Score:'} <strong className="text-white text-sm">{topCrop.score}/100</strong>
+            </span>
             <button
               onClick={handleRunAnalysis}
               disabled={isAnalyzing}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white text-emerald-950 font-black text-xs sm:text-sm shadow-xl hover:bg-emerald-50 transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="px-4 py-2 rounded-xl bg-white text-emerald-950 font-extrabold text-xs shadow-md hover:bg-emerald-50 transition-all cursor-pointer"
             >
-              <BrainCircuit className={`w-4 h-4 text-emerald-700 ${isAnalyzing ? 'animate-spin' : ''}`} />
-              <span>{isAnalyzing ? t.analyzingBtn : t.analyzeMyFarmBtn}</span>
+              {isAnalyzing ? t.analyzingBtn : t.analyzeMyFarmBtn}
             </button>
           </div>
         </div>
 
-        {/* Input Parameters Ingested */}
-        <div className="mt-6 pt-5 border-t border-emerald-800/80 grid grid-cols-2 sm:grid-cols-6 gap-3 text-xs">
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'स्थान' : 'Location'}</span>
-            <span className="font-bold text-white">{farmProfile.location}</span>
+        {/* Hero Crop Title & Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+          <div className="lg:col-span-2 space-y-2">
+            <span className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
+              {topCrop.category} • {topCrop.season} Season • {farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres'}
+            </span>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight font-sans text-white">
+              {language === 'hi' ? topCrop.hindiName : topCrop.name}
+            </h1>
+            <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed max-w-xl font-normal">
+              {language === 'hi' 
+                ? `आपकी ${farmProfile.farmArea} एकड़ ${farmProfile.soilType} (दोमट) मिट्टी और गेहूं के बाद के चक्र के लिए न्यूनतम पानी व उच्चतम मंडी मांग के कारण सबसे अनुशंसित फसल।`
+                : `Highest ranked crop for your ${farmProfile.farmArea}-acre ${farmProfile.soilType} soil in ${farmProfile.location} following ${farmProfile.previousCrop}, providing optimal margin and lowest water requirement.`}
+            </p>
           </div>
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'खेत का क्षेत्रफल' : 'Farm Area'}</span>
-            <span className="font-bold text-white">{farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres'}</span>
+
+          {/* Prominent Profit Range Box */}
+          <div className="bg-emerald-900/80 backdrop-blur-md border border-emerald-400/40 p-6 rounded-3xl space-y-2 text-center lg:text-right shadow-lg">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300 block">
+              {t.expectedProfitLabel} ({farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres'})
+            </span>
+            <div className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              ₹{(topCrop.expectedProfitMin || 0) / 1000}k – ₹{(topCrop.expectedProfitMax || 0) / 1000}k
+            </div>
+            <span className="text-[11px] text-emerald-200 block font-medium">
+              ₹{topCrop.expectedProfitMin?.toLocaleString('en-IN')} – ₹{topCrop.expectedProfitMax?.toLocaleString('en-IN')}
+            </span>
           </div>
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'मिट्टी प्रकार' : 'Soil Type'}</span>
-            <span className="font-bold text-white">{farmProfile.soilType} {language === 'hi' ? '(दोमट)' : ''}</span>
+        </div>
+
+        {/* Visual Progress Indicators: Suitability, Supply, Demand, Risk */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-emerald-800/80 text-xs">
+          <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/60 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-emerald-300 font-bold">
+              <span>{t.soilSuitabilityLabel}</span>
+              <span className="text-white">{topCrop.soilSuitabilityScore}%</span>
+            </div>
+            <div className="w-full bg-emerald-950 rounded-full h-2 overflow-hidden">
+              <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${topCrop.soilSuitabilityScore}%` }}></div>
+            </div>
           </div>
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'सिंचाई' : 'Water Source'}</span>
-            <span className="font-bold text-white">{farmProfile.waterAvailability}</span>
+
+          <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/60 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-emerald-300 font-bold">
+              <span>{t.regionalDemandLabel}</span>
+              <span className="text-emerald-300 font-black">{topCrop.demandRating} ({topCrop.currentRegionalDemandIndex}/100)</span>
+            </div>
+            <div className="w-full bg-emerald-950 rounded-full h-2 overflow-hidden">
+              <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${topCrop.currentRegionalDemandIndex}%` }}></div>
+            </div>
           </div>
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'पूर्व फसल' : 'Previous Crop'}</span>
-            <span className="font-bold text-white">{farmProfile.previousCrop} {language === 'hi' ? '(गेहूं)' : ''}</span>
+
+          <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/60 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-emerald-300 font-bold">
+              <span>{t.regionalSupplyLabel}</span>
+              <span className="text-stone-300 font-black">{topCrop.supplyRating} ({topCrop.currentRegionalSupplyIndex}/100)</span>
+            </div>
+            <div className="w-full bg-emerald-950 rounded-full h-2 overflow-hidden">
+              <div className="bg-rose-400 h-full rounded-full" style={{ width: `${topCrop.currentRegionalSupplyIndex}%` }}></div>
+            </div>
           </div>
-          <div className="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/50">
-            <span className="text-[10px] text-emerald-300 block">{language === 'hi' ? 'लक्ष्य सीजन' : 'Target Cycle'}</span>
-            <span className="font-bold text-amber-300">{language === 'hi' ? 'रबी / आलू उपरांत' : 'Rabi / Post-Potato'}</span>
+
+          <div className="bg-emerald-950/60 p-3 rounded-2xl border border-emerald-800/60 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-emerald-300 font-bold">
+              <span>{t.overallRiskLabel}</span>
+              <span className="text-green-400 font-black">{topCrop.overallRisk}</span>
+            </div>
+            <div className="text-[10px] text-emerald-200/80 font-medium">
+              {language === 'hi' ? 'मौसम सहिष्णुता: ८५/१००' : 'Weather Resilience: 85/100'}
+            </div>
           </div>
+        </div>
+
+        {/* Why Recommended Rationale Checklist */}
+        <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/15 space-y-2 text-xs">
+          <span className="font-extrabold uppercase tracking-wider text-amber-300 block text-[11px]">
+            {t.whyRecommendedTitle}
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-emerald-100">
+            {topCrop.reasons?.map((reason, idx) => (
+              <div key={idx} className="flex items-start space-x-2">
+                <span className="text-emerald-400 font-black shrink-0">✓</span>
+                <span className="leading-tight">{reason}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* 2. STANDING CROP CONTEXT & EMERGENCY BRIDGE */}
+      <div className="bg-amber-50/90 border border-amber-300 rounded-3xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start space-x-3">
+          <div className="p-2.5 bg-amber-600 text-white rounded-2xl shrink-0">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="text-[10px] font-black uppercase tracking-wider text-amber-800">
+              {language === 'hi' ? 'वर्तमान फसल स्थिति' : 'Standing Crop Context'}
+            </div>
+            <h3 className="font-black text-stone-900 text-sm">
+              {language === 'hi' 
+                ? `वर्तमान फसल: ${farmProfile.currentCrop} (परिपक्वता: ${farmProfile.harvestReadinessPercent}%) • बेमौसम वर्षा जोखिम` 
+                : `Current Crop: ${farmProfile.currentCrop} (${farmProfile.harvestReadinessPercent}% Harvest Ready) • Rain Risk`}
+            </h3>
+            <p className="text-xs text-amber-900/90 leading-relaxed max-w-2xl">
+              {language === 'hi'
+                ? 'कटाई खिड़की वर्तमान में खुली है। बेमौसम बारिश से बचाव हेतु त्वरित खुदाई व सीधी बिक्री योजना देखें।'
+                : 'Harvest window is active. Manage unseasonal rain risk before evaluating your next sowing plan.'}
+            </p>
+          </div>
+        </div>
+
+        {setCurrentPage && (
+          <button
+            onClick={() => setCurrentPage('emergency')}
+            className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+          >
+            {language === 'hi' ? 'आपातकालीन राहत योजना देखें →' : 'Review Emergency Action →'}
+          </button>
+        )}
+      </div>
+
+      {/* 3. STANDARDIZED 7-STAGE DECISION PIPELINE DIAGRAM */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              {language === 'hi' ? 'निर्णय प्रक्रिया' : 'Decision Pipeline'}
+            </span>
+            <h3 className="font-extrabold text-base text-stone-900">
+              {t.pipelineTitle}
+            </h3>
+          </div>
+          <span className="text-xs text-stone-500 font-medium hidden sm:inline">
+            {t.pipelineSub}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-center text-xs">
+          {pipelineStages.map((stage, idx) => (
+            <div key={idx} className="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 space-y-1">
+              <span className="text-[9px] text-stone-400 font-bold uppercase block">STAGE {stage.step}</span>
+              <span className="font-extrabold text-stone-900 block leading-tight">{stage.title}</span>
+              <span className="text-[10px] text-stone-500 block leading-none">{stage.sub}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Animated Analysis Pipeline Simulation */}
-      {isAnalyzing && (
-        <div className="bg-white rounded-3xl border border-emerald-300 p-8 shadow-md space-y-4 animate-fadeIn">
-          <div className="flex items-center space-x-3 text-emerald-800">
-            <RotateCw className="w-5 h-5 animate-spin text-emerald-600" />
-            <h3 className="text-base font-extrabold text-stone-900">
-              {language === 'hi' 
-                ? `${farmProfile.farmArea} एकड़ खेत हेतु निर्णय प्रक्रिया जारी...`
-                : `Running Decision Pipeline for ${farmProfile.farmArea} Acres...`}
+      {/* 4. SIDE-BY-SIDE COMPARATIVE DECISION MATRIX (#2 & #3 CROPS) */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              {language === 'hi' ? 'विकल्प तुलना' : 'Alternative Options'}
+            </span>
+            <h3 className="font-extrabold text-base text-stone-900">
+              {t.comparisonTitle}
             </h3>
-          </div>
-
-          <div className="space-y-2">
-            {pipelineSteps.map((step, idx) => {
-              const isPast = idx < analysisStep;
-              const isCurrent = idx === analysisStep;
-              return (
-                <div 
-                  key={idx}
-                  className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
-                    isCurrent
-                      ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-1 ring-emerald-500'
-                      : isPast
-                      ? 'bg-stone-50 border-stone-200 text-stone-700'
-                      : 'opacity-40 border-dashed border-stone-200 text-stone-400'
-                  }`}
-                >
-                  <span>{step}</span>
-                  {isPast && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                  {isCurrent && <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>}
-                </div>
-              );
-            })}
+            <p className="text-xs text-stone-500 mt-0.5">{t.comparisonSub}</p>
           </div>
         </div>
-      )}
 
-      {/* FEEDBACK LOOP INTERACTIVE DEMO CALLOUT */}
+        {/* Matrix Table for Desktop / Cards for Mobile */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 font-extrabold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="py-3 px-4">Rank & Crop</th>
+                <th className="py-3 px-4">Suitability</th>
+                <th className="py-3 px-4">Yield</th>
+                <th className="py-3 px-4">Demand</th>
+                <th className="py-3 px-4">Supply Index</th>
+                <th className="py-3 px-4">Est. Net Profit Range</th>
+                <th className="py-3 px-4">Risk Level</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {intelResult.allRankedCrops.slice(0, 4).map((crop, idx) => (
+                <tr key={crop.id} className={idx === 0 ? 'bg-emerald-50/50 font-bold' : 'hover:bg-stone-50/80'}>
+                  <td className="py-3 px-4 font-black text-stone-900 flex items-center space-x-2">
+                    <span className={`w-5 h-5 rounded-full text-[10px] flex items-center justify-center font-black ${
+                      idx === 0 ? 'bg-emerald-700 text-white' : 'bg-stone-200 text-stone-700'
+                    }`}>
+                      #{idx + 1}
+                    </span>
+                    <span>{language === 'hi' ? crop.hindiName : crop.name}</span>
+                  </td>
+                  <td className="py-3 px-4 font-bold text-stone-800">{crop.soilSuitabilityScore}%</td>
+                  <td className="py-3 px-4 text-stone-700">{crop.expectedYield} q</td>
+                  <td className="py-3 px-4 font-bold text-emerald-700">{crop.demandRating}</td>
+                  <td className="py-3 px-4 text-stone-700">{crop.currentRegionalSupplyIndex}/100</td>
+                  <td className="py-3 px-4 font-black text-emerald-900">
+                    ₹{(crop.expectedProfitMin || 0) / 1000}k – ₹{(crop.expectedProfitMax || 0) / 1000}k
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      crop.overallRisk === 'Low' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {crop.overallRisk}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 5. VISUAL PROFIT RANGE COMPARISON & SUPPLY VS DEMAND RECHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Custom Range Profit Bar Chart */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                {language === 'hi' ? 'मुनाफा रेंज' : 'Profit Spreads'}
+              </span>
+              <h3 className="font-extrabold text-base text-stone-900">
+                {t.profitRangeVisualTitle}
+              </h3>
+            </div>
+            <span className="text-xs text-emerald-700 font-bold">
+              {farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres Total'}
+            </span>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            {intelResult.allRankedCrops.slice(0, 4).map((crop) => (
+              <div key={crop.id} className="space-y-1 text-xs">
+                <div className="flex justify-between font-bold text-stone-800">
+                  <span>{language === 'hi' ? crop.hindiName : crop.name.split(' ')[0]}</span>
+                  <span className="text-emerald-800 font-black">
+                    ₹{(crop.expectedProfitMin || 0) / 1000}k – ₹{(crop.expectedProfitMax || 0) / 1000}k
+                  </span>
+                </div>
+                <div className="w-full bg-stone-100 rounded-full h-3 relative overflow-hidden">
+                  <div 
+                    className="h-full bg-emerald-600 rounded-full opacity-90"
+                    style={{
+                      marginLeft: `${Math.max(5, ((crop.expectedProfitMin || 0) / 250000) * 100)}%`,
+                      width: `${Math.min(90, (((crop.expectedProfitMax || 0) - (crop.expectedProfitMin || 0)) / 250000) * 100 + 15)}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-stone-500 leading-relaxed italic">
+            {language === 'hi'
+              ? 'मुनाफा रेंज में न्यूनतम व अधिकतम उत्पादन मूल्य दर्शाया गया है।'
+              : 'Profit bars represent explicit min-to-max net return range accounting for weather and price volatility.'}
+          </p>
+        </div>
+
+        {/* Regional Supply vs Demand Index Chart */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                {language === 'hi' ? 'बाज़ार संतुलन' : 'Market Equilibrium'}
+              </span>
+              <h3 className="font-extrabold text-base text-stone-900">
+                {language === 'hi' ? 'क्षेत्रीय मांग बनाम आपूर्ति सूचकांक' : 'Regional Supply vs Demand Index'}
+              </h3>
+            </div>
+            <span className="text-xs text-stone-500 font-medium">
+              Scale 0–100
+            </span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                <Bar dataKey="DemandIndex" fill="#059669" name={language === 'hi' ? 'मांग सूचकांक' : 'Demand Index'} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="SupplyIndex" fill="#e11d48" name={language === 'hi' ? 'आवक सूचकांक' : 'Supply Index'} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 6. CLOSED-LOOP SIMULATED FEEDBACK COMPARISON */}
       <div className="bg-white rounded-3xl border-2 border-emerald-500/40 p-6 sm:p-7 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-100 pb-4">
           <div className="space-y-1">
             <div className="inline-flex items-center space-x-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
               <RotateCw className="w-3.5 h-3.5" />
-              <span>{language === 'hi' ? 'लाइव सिमुलेशन' : 'Interactive Demonstration'}</span>
+              <span>{language === 'hi' ? 'सिमुलेशन फीडबैक' : 'Simulated Regional Feedback'}</span>
             </div>
             <h3 className="text-lg font-black text-stone-900">
               {t.feedbackLoopTitle}
             </h3>
-            <p className="text-xs text-stone-600 max-w-2xl leading-relaxed">
-              {t.feedbackLoopDesc}
-            </p>
           </div>
 
           <div className="flex items-center space-x-3 bg-stone-50 p-3 rounded-2xl border border-stone-200 shrink-0">
@@ -245,291 +492,67 @@ export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile 
           </div>
         </div>
 
-        {/* Dynamic Feedback Loop Banner */}
-        <div className={`p-4 rounded-2xl border text-xs flex items-start space-x-3 transition-colors ${
-          adoptionShift > 0 
-            ? 'bg-amber-50 border-amber-300 text-amber-900' 
-            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-        }`}>
-          <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
-          <div className="space-y-1">
-            <span className="font-extrabold block">
-              {adoptionShift > 0 
-                ? (language === 'hi' 
-                    ? 'फीडबैक लूप सक्रिय: आगरा क्षेत्र में सरसों की बंपर बुवाई का प्रभाव' 
-                    : 'Feedback Loop Triggered: High Mustard Adoption Detected in Agra')
-                : (language === 'hi'
-                    ? 'सामान्य बाज़ार संतुलन (वर्तमान में सरसों सबसे उत्तम खिड़की)'
-                    : 'Baseline Market Equilibrium (Current Optimal Window)')}
-            </span>
-            <p className="leading-relaxed">
-              {language === 'hi' && adoptionShift > 0
-                ? 'सरसों की क्षेत्रीय बुवाई में +४५% उछाल आने से आपूर्ति बढ़कर ७२/१०० हो गई है, जिससे सरसों का जोखिम मध्यम से उच्च हो गया है। परिणामस्वरूप, चना (JG-11) और हरी मटर अब शीर्ष लाभदायक विकल्प बन गए हैं!'
-                : language === 'hi'
-                ? `आपकी ५ एकड़ दोमट मिट्टी और गेहूं के बाद के चक्र के अनुसार, सरसों (Pusa Bold) और चना (Desi JG-11) न्यूनतम पानी और अधिकतम मंडी मांग के कारण सबसे अधिक मुनाफा प्रदान करते हैं।`
-                : intelResult.summaryText}
-            </p>
+        {/* Before / After Comparison Display */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+            <div className="font-extrabold text-emerald-950 flex items-center justify-between">
+              <span>Baseline Equilibrium (0%)</span>
+              <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">Optimal Window</span>
+            </div>
+            <div className="space-y-1 text-emerald-900 font-medium">
+              <div>#1 Mustard (Score: 88/100) — Low supply pressure</div>
+              <div>#2 Chickpea (Score: 82/100)</div>
+              <div>#3 Green Peas (Score: 76/100)</div>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-2xl border space-y-2 ${
+            adoptionShift > 0 ? 'bg-amber-50 border-amber-300 text-amber-950' : 'bg-stone-50 border-stone-200 text-stone-500'
+          }`}>
+            <div className="font-extrabold flex items-center justify-between">
+              <span>Adoption Surge (+45% Mustard Shift)</span>
+              <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded">Rebalanced</span>
+            </div>
+            <div className="space-y-1 font-medium">
+              <div>#1 Chickpea (Score: 85/100) ➔ <span className="font-black text-emerald-700">Rises to #1</span></div>
+              <div>#2 Mustard (Score: 78/100) ➔ <span className="text-amber-800">Glut risk shifts to #2</span></div>
+              <div>#3 Green Peas (Score: 76/100)</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* TOP 3 CROP RECOMMENDATIONS */}
-      {hasAnalyzed && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
-                {t.rankedOutputTitle}
-              </span>
-              <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                {language === 'hi' ? 'शीर्ष ३ सिफारिशें' : 'Top 3 Recommendations'}
-              </span>
-            </div>
-            <span className="text-xs text-stone-400">
-              {language === 'hi' ? '५ एकड़ कुल रकबे हेतु आकलित' : 'Calculated for 5 Acres Total'}
-            </span>
+      {/* 7. Action Navigation Footer */}
+      {setCurrentPage && (
+        <div className="bg-stone-900 text-white rounded-3xl p-6 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <h4 className="font-black text-base">{language === 'hi' ? 'निर्णय से निष्पादन की ओर बढ़ें' : 'Move from Intelligence to Execution'}</h4>
+            <p className="text-xs text-stone-300">
+              {language === 'hi' ? 'मंडी दरें व खरीदार देखें, आपातकालीन राहत खोलें या एआई से सवाल पूछें।' : 'Check verified buyers, open emergency harvest plan, or query FarmHub AI.'}
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {intelResult.topRecommendations.map((crop, idx) => {
-              const isFirst = idx === 0;
-              const riskColor = {
-                'Low': 'bg-green-100 text-green-800 border-green-200',
-                'Medium': 'bg-amber-100 text-amber-800 border-amber-200',
-                'High': 'bg-rose-100 text-rose-800 border-rose-200'
-              }[crop.overallRisk || 'Medium'];
-
-              return (
-                <div 
-                  key={crop.id}
-                  className={`bg-white rounded-3xl border transition-all p-6 flex flex-col justify-between space-y-5 shadow-xs relative ${
-                    isFirst ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-stone-200'
-                  }`}
-                >
-                  {isFirst && (
-                    <div className="absolute -top-3 left-6 bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                      {t.topChoiceTag}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    {/* Crop Name & Badges */}
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                          {crop.category} • {crop.season}
-                        </span>
-                        <h2 className="text-xl font-black text-stone-900 mt-0.5">
-                          {language === 'hi' ? crop.hindiName : crop.name}
-                        </h2>
-                        <span className="text-xs text-stone-400 font-semibold">
-                          {language === 'hi' ? crop.name : crop.hindiName}
-                        </span>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-xs font-black text-stone-900 block">
-                          {language === 'hi' ? 'स्कोर' : 'Score'}: {crop.score}/100
-                        </span>
-                        <span className="text-[10px] text-stone-400">
-                          {language === 'hi' ? 'समग्र' : 'Composite'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Key Metrics Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-stone-50 p-3 rounded-2xl border border-stone-200/70">
-                      <div>
-                        <span className="text-[10px] text-stone-400 block font-medium">{t.soilSuitabilityLabel}</span>
-                        <span className="font-extrabold text-stone-900">
-                          {crop.soilSuitabilityScore}% ({language === 'hi' ? 'उत्तम' : 'High'})
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-stone-400 block font-medium">{t.expectedYieldLabel}</span>
-                        <span className="font-extrabold text-stone-900">
-                          {crop.expectedYield} {language === 'hi' ? 'क्विंटल' : 'Quintals'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-stone-400 block font-medium">{t.regionalDemandLabel}</span>
-                        <span className="font-extrabold text-emerald-700">
-                          {language === 'hi' 
-                            ? (crop.demandRating === 'High' ? 'उच्च' : crop.demandRating === 'Moderate' ? 'मध्यम' : 'सामान्य')
-                            : crop.demandRating}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-stone-400 block font-medium">{t.regionalSupplyLabel}</span>
-                        <span className="font-extrabold text-stone-800">
-                          {language === 'hi'
-                            ? (crop.supplyRating === 'High' ? 'उच्च' : crop.supplyRating === 'Moderate' ? 'मध्यम' : 'कम')
-                            : crop.supplyRating} ({crop.currentRegionalSupplyIndex}/100)
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Expected Profit Range Box */}
-                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-                      <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">
-                        {t.expectedProfitLabel}
-                      </span>
-                      <div className="text-xl sm:text-2xl font-black text-emerald-950 mt-1">
-                        ₹{crop.expectedProfitMin?.toLocaleString('en-IN')} – ₹{crop.expectedProfitMax?.toLocaleString('en-IN')}
-                      </div>
-                      <span className="text-[11px] text-emerald-700 font-medium">
-                        {language === 'hi' 
-                          ? `कुल उपज मूल्य: ~₹${crop.expectedRevenue?.toLocaleString('en-IN')} • लागत: ~₹${crop.expectedCost?.toLocaleString('en-IN')}`
-                          : `Gross Yield: ~₹${crop.expectedRevenue?.toLocaleString('en-IN')} • Cost: ~₹${crop.expectedCost?.toLocaleString('en-IN')}`}
-                      </span>
-                    </div>
-
-                    {/* Risk Rating */}
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-stone-500 font-bold">{t.overallRiskLabel}</span>
-                      <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${riskColor}`}>
-                        {language === 'hi' 
-                          ? (crop.overallRisk === 'Low' ? 'कम जोखिम' : crop.overallRisk === 'Medium' ? 'मध्यम जोखिम' : 'उच्च जोखिम')
-                          : `${crop.overallRisk} Risk`}
-                      </span>
-                    </div>
-
-                    {/* Why Recommended Rationale Checklist */}
-                    <div className="space-y-2 pt-2 border-t border-stone-100">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-stone-700 block">
-                        {t.whyRecommendedTitle}
-                      </span>
-                      <div className="space-y-1.5 text-xs text-stone-700">
-                        {language === 'hi' ? (
-                          <>
-                            <div className="flex items-start space-x-2">
-                              <span className="text-emerald-700 font-black shrink-0">✓</span>
-                              <span className="leading-tight">आगरा की दोमट मिट्टी और सिंचित व्यवस्था के साथ शत-प्रतिशत जैविक अनुकूलता।</span>
-                            </div>
-                            <div className="flex items-start space-x-2">
-                              <span className="text-emerald-700 font-black shrink-0">✓</span>
-                              <span className="leading-tight">आगरा व आसपास की तेल/बेसन मिलों में लगातार मजबूत मांग।</span>
-                            </div>
-                            <div className="flex items-start space-x-2">
-                              <span className="text-emerald-700 font-black shrink-0">✓</span>
-                              <span className="leading-tight">गेहूं व आलू के बाद कीट चक्र तोड़ने और मिट्टी सुधारने के लिए सर्वोत्तम फसल चक्र।</span>
-                            </div>
-                          </>
-                        ) : (
-                          crop.reasons?.map((reason, rIdx) => (
-                            <div key={rIdx} className="flex items-start space-x-2">
-                              <span className="text-emerald-700 font-black shrink-0">✓</span>
-                              <span className="leading-tight">{reason}</span>
-                            </div>
-                          ))
-                        )}
-                        {crop.risks && crop.risks.length > 0 && (
-                          <div className="pt-1 text-[11px] text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200/60 flex items-start space-x-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                            <span>
-                              {language === 'hi' 
-                                ? `जोखिम नोट: ${crop.currentRegionalSupplyIndex > 70 ? 'अधिक बुवाई से मंडी में आवक दबाव संभव।' : 'मौसम में नमी बढ़ने पर रोग निगरानी आवश्यक।'}`
-                                : `Risk note: ${crop.risks[0]}`}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      onClick={() => alert(language === 'hi' 
-                        ? `${crop.hindiName} की बुवाई कार्य-योजना आपके मौसमी कैलेंडर में दर्ज कर दी गई है।` 
-                        : `Sowing package details for ${crop.name} logged to your seasonal agro-calendar.`)}
-                      className="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
-                    >
-                      {language === 'hi' 
-                        ? `${crop.hindiName} बुवाई योजना चुनें` 
-                        : `Select ${crop.name.split(' ')[0]} for Sowing Plan`}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setCurrentPage('market')}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer transition-colors"
+            >
+              {language === 'hi' ? 'मंडी खरीदार' : 'Check Market'}
+            </button>
+            <button
+              onClick={() => setCurrentPage('emergency')}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs cursor-pointer transition-colors"
+            >
+              {language === 'hi' ? 'आपातकाल' : 'Emergency'}
+            </button>
+            <button
+              onClick={() => setCurrentPage('assistant')}
+              className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer transition-colors"
+            >
+              {language === 'hi' ? 'एआई सहायक' : 'Ask AI'}
+            </button>
           </div>
         </div>
       )}
-
-      {/* VISUALIZATION SECTION: Recharts & Comparative Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
-        
-        {/* Supply vs Demand Comparison Chart */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                {language === 'hi' ? 'बाज़ार गतिशीलता' : 'Market Dynamics'}
-              </span>
-              <h3 className="font-extrabold text-base text-stone-900">
-                {language === 'hi' ? 'क्षेत्रीय मांग बनाम आवक (सप्लाई) सूचकांक' : 'Regional Supply vs Demand Index'}
-              </h3>
-            </div>
-            <span className="text-xs text-stone-500 font-medium">
-              {language === 'hi' ? 'पैमाना ०-१००' : 'Scale 0–100'}
-            </span>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="DemandIndex" fill="#059669" name={language === 'hi' ? 'मांग सूचकांक' : 'Demand Index'} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="SupplyIndex" fill="#e11d48" name={language === 'hi' ? 'आवक (सप्लाई) सूचकांक' : 'Supply Index'} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-[11px] text-stone-500 leading-relaxed italic">
-            {language === 'hi' 
-              ? 'जिन फसलों में हरा बार (मांग) अधिक और लाल बार (सप्लाई) कम होता है, वे कटाई के बाद कीमतों में स्थिरता और अधिक मुनाफा सुनिश्चित करती हैं।'
-              : 'Crops with high green bars (Demand) and lower red bars (Supply) offer superior price resilience and reduced post-harvest glut risk.'}
-          </p>
-        </div>
-
-        {/* Expected Net Profit Range Comparison */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                {language === 'hi' ? 'आर्थिक लाभ' : 'Economic Return'}
-              </span>
-              <h3 className="font-extrabold text-base text-stone-900">
-                {language === 'hi' ? '५ एकड़ अनुमानित शुद्ध मुनाफा (हज़ार ₹ में)' : 'Projected 5-Acre Profit (in ₹\'000)'}
-              </h3>
-            </div>
-            <span className="text-xs text-emerald-700 font-bold">
-              {language === 'hi' ? 'न्यूनतम व अधिकतम रेंज' : 'Min vs Max Range'}
-            </span>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value) => [`₹${Number(value) * 1000}`, language === 'hi' ? 'शुद्ध मुनाफा' : 'Profit Range']} />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="MinProfit" fill="#10b981" name={language === 'hi' ? 'न्यूनतम मुनाफा (₹\'०००)' : 'Min Profit (₹\'000)'} radius={[4, 4, 0, 0]} />
-                <Bar dataKey="MaxProfit" fill="#047857" name={language === 'hi' ? 'अधिकतम मुनाफा (₹\'०००)' : 'Max Profit (₹\'000)'} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-[11px] text-stone-500 leading-relaxed italic">
-            {language === 'hi'
-              ? 'मुनाफा गणना में बीज, उर्वरक, सिंचाई और मजदूरी लागत शामिल है। कम लागत और ऊंची मंडी दर के कारण सरसों व चना अग्रणी हैं।'
-              : 'Profit accounts for seed, fertilizer, irrigation, and labor costs. Mustard and Chickpea lead due to low input cost and high oilseed/pulse market prices.'}
-          </p>
-        </div>
-
-      </div>
 
     </div>
   );

@@ -11,7 +11,11 @@ import {
   Calendar, 
   Sprout, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  BrainCircuit,
+  Info,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import { DEFAULT_FARM_PROFILE } from '../data/centralData';
 
@@ -26,7 +30,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
   setFarmProfile,
   setCurrentPage
 }) => {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [formData, setFormData] = useState<FarmProfileData>(farmProfile);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -48,51 +52,83 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 1. Header */}
+      <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
             <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
               <MapPin className="w-5 h-5" />
             </span>
             <h1 className="text-xl sm:text-2xl font-black text-stone-900">
-              {language === 'hi' ? 'खेत प्रोफ़ाइल एवं बुनियादी पैरामीटर' : 'Farm Profile & Baseline Parameters'}
+              {language === 'hi' ? 'खेत प्रोफ़ाइल एवं बुनियादी मापदंड' : 'Farm Profile & Baseline Parameters'}
             </h1>
           </div>
           <p className="text-xs text-stone-500 mt-1">
             {language === 'hi' 
-              ? 'फार्महब के निर्णय इंजन को सटीक बनाने के लिए अपने खेत की मिट्टी, क्षेत्रफल, सिंचाई और पिछली फसल का विवरण दर्ज करें।'
-              : 'Configure your farm\'s physical soil, area, water regime, and previous crops to ground FarmHub\'s intelligence engine.'}
+              ? 'फार्महब के निर्णय इंजन को सटीक बनाने के लिए अपने खेत की मिट्टी, क्षेत्रफल, सिंचाई और फसल का विवरण दर्ज करें।'
+              : 'Configure your farm\'s physical soil, area, water regime, and crop rotation to ground FarmHub\'s intelligence engine.'}
           </p>
         </div>
 
-        <button
-          onClick={() => setCurrentPage('intelligence')}
-          className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-xs hover:bg-emerald-800 transition-colors cursor-pointer"
-        >
-          <span>{language === 'hi' ? 'बुद्धिमत्ता विश्लेषण चलाएं' : 'Run Intelligence Analysis'}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center space-x-2">
+          <span className="text-[10px] font-bold px-2 py-1 rounded bg-stone-100 text-stone-600">
+            {t.demoDataBadge}
+          </span>
+          <button
+            onClick={() => setCurrentPage('intelligence')}
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-xs hover:bg-emerald-800 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <span>{language === 'hi' ? 'बुद्धिमत्ता विश्लेषण चलाएं' : 'Run Intelligence Analysis'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Educational Explanation Box (Why Profile Matters) */}
+      <div className="bg-gradient-to-r from-emerald-900 to-teal-950 text-white p-6 rounded-3xl shadow-sm space-y-3">
+        <div className="flex items-center space-x-2 text-amber-300 text-xs font-extrabold uppercase tracking-wider">
+          <BrainCircuit className="w-4 h-4 text-amber-300" />
+          <span>{t.profileWhyTitle}</span>
+        </div>
+        <p className="text-xs text-emerald-100 leading-relaxed font-normal">
+          {t.profileWhyDesc}
+        </p>
+        <div className="pt-2 flex flex-wrap items-center gap-3 text-[11px] text-emerald-200 font-bold border-t border-emerald-800/80">
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Farm Context</span>
+          </div>
+          <span>➔</span>
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 rounded-full bg-teal-400"></span>
+            <span>Intelligence Processing</span>
+          </div>
+          <span>➔</span>
+          <div className="flex items-center space-x-1">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Personalized Crop Action</span>
+          </div>
+        </div>
       </div>
 
       {isSaved && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center space-x-2 animate-fadeIn">
+        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs flex items-center space-x-2 animate-fadeIn">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span className="font-bold">
             {language === 'hi' 
               ? 'खेत प्रोफ़ाइल सुरक्षित की गई और फार्महब निर्णय इंजन से सिंक हो गई!'
-              : 'Farm profile updated and synced to FarmHub Decision Engine!'}
+              : 'Farm profile updated and synced to FarmHub Decision Engine & Dashboard!'}
           </span>
         </div>
       )}
 
-      {/* Main Edit Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+      {/* 3. Main Edit Form */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
         
-        {/* Basic Farmer Identification */}
+        {/* Farmer Information */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center space-x-1.5 border-b border-stone-100 pb-2">
-            <Sprout className="w-4 h-4 text-emerald-600" />
+            <UserCheck className="w-4 h-4 text-emerald-600" />
             <span>{language === 'hi' ? 'किसान व स्थान विवरण' : 'Farmer & Location Details'}</span>
           </h3>
 
@@ -106,7 +142,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
                 required
                 value={formData.farmerName}
                 onChange={(e) => setFormData({ ...formData, farmerName: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
 
@@ -119,17 +155,17 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
                 required
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
           </div>
         </div>
 
-        {/* Land & Resource Attributes */}
+        {/* Farm Characteristics (Soil & Water) */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center space-x-1.5 border-b border-stone-100 pb-2">
             <Layers className="w-4 h-4 text-emerald-600" />
-            <span>{language === 'hi' ? 'भूमि, मिट्टी एवं सिंचाई पैरामीटर' : 'Land, Soil & Water Parameters'}</span>
+            <span>{language === 'hi' ? 'भूमि, मिट्टी एवं सिंचाई मापदंड' : 'Land, Soil & Water Parameters'}</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -159,7 +195,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
               <select
                 value={formData.soilType}
                 onChange={(e) => setFormData({ ...formData, soilType: e.target.value as any })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
               >
                 <option value="Loamy">Loamy ({language === 'hi' ? 'दोमट - संतुलित' : 'Optimal balanced'})</option>
                 <option value="Sandy Loam">Sandy Loam ({language === 'hi' ? 'बलुई दोमट' : 'Light'})</option>
@@ -179,7 +215,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
               <select
                 value={formData.waterAvailability}
                 onChange={(e) => setFormData({ ...formData, waterAvailability: e.target.value as any })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
               >
                 <option value="Irrigated">Irrigated ({language === 'hi' ? 'पूर्ण सिंचित' : 'Assured'})</option>
                 <option value="Borewell Assisted">Borewell Assisted ({language === 'hi' ? 'नलकूप / बोरवेल' : 'Groundwater'})</option>
@@ -193,7 +229,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
           </div>
         </div>
 
-        {/* Crop History & Current Standing Crop */}
+        {/* Current Crop & Rotation History */}
         <div className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center space-x-1.5 border-b border-stone-100 pb-2">
             <Calendar className="w-4 h-4 text-emerald-600" />
@@ -208,7 +244,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
               <select
                 value={formData.previousCrop}
                 onChange={(e) => setFormData({ ...formData, previousCrop: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500 font-medium"
               >
                 <option value="Wheat">Wheat ({language === 'hi' ? 'गेहूं - अधिक पोषक तत्व खपत' : 'High nitrogen depletion'})</option>
                 <option value="Rice (Paddy)">Rice / Paddy ({language === 'hi' ? 'धान' : 'Paddy'})</option>
@@ -229,7 +265,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
                 type="text"
                 value={formData.currentCrop}
                 onChange={(e) => setFormData({ ...formData, currentCrop: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 font-medium"
               />
               <span className="text-[10px] text-stone-400 mt-1 block">
                 {language === 'hi' ? 'डेमो आधार: आलू (Potato)' : 'Default demo: Potato'}
@@ -246,7 +282,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
                 type="date"
                 value={formData.plantingDate}
                 onChange={(e) => setFormData({ ...formData, plantingDate: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
 
@@ -258,7 +294,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
                 type="date"
                 value={formData.expectedHarvestDate}
                 onChange={(e) => setFormData({ ...formData, expectedHarvestDate: e.target.value })}
-                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 font-medium"
               />
             </div>
 
@@ -281,7 +317,7 @@ export const FarmProfile: React.FC<FarmProfileProps> = ({
           </div>
         </div>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-between pt-4 border-t border-stone-100 gap-3">
           <button
             type="button"

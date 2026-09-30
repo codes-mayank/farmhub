@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { EmergencyActionItem, FarmProfileData } from '../types/farmhub';
+import { EmergencyActionItem, FarmProfileData, PageId } from '../types/farmhub';
 import { EMERGENCY_SCENARIO, EMERGENCY_PROVIDERS } from '../data/centralData';
+import { AUTHORITATIVE_DEMO_SCENARIO } from '../data/demoScenario';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   AlertTriangle, 
@@ -15,18 +16,30 @@ import {
   Clock, 
   MapPin, 
   Sparkles,
-  X
+  X,
+  ArrowRight,
+  TrendingDown,
+  DollarSign,
+  Info,
+  Calendar,
+  Layers,
+  HelpCircle,
+  Zap,
+  Activity
 } from 'lucide-react';
 
 interface EmergencyPageProps {
   farmProfile: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
 }
 
-export const EmergencyPage: React.FC<EmergencyPageProps> = ({ farmProfile }) => {
+export const EmergencyPage: React.FC<EmergencyPageProps> = ({ farmProfile, setCurrentPage }) => {
   const { language, t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<'All' | 'Machinery' | 'Labour' | 'Storage' | 'Transport' | 'Buyer'>('All');
   const [selectedProvider, setSelectedProvider] = useState<EmergencyActionItem | null>(null);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [demoActionToast, setDemoActionToast] = useState<string | null>(null);
+
   const [contactName, setContactName] = useState(farmProfile.farmerName);
   const [contactPhone, setContactPhone] = useState('+91 98370 22119');
   const [urgencyNote, setUrgencyNote] = useState(language === 'hi' 
@@ -46,128 +59,291 @@ export const EmergencyPage: React.FC<EmergencyPageProps> = ({ farmProfile }) => 
     }, 3000);
   };
 
+  const handleQuickDemoAction = (actionTitle: string) => {
+    setDemoActionToast(language === 'hi'
+      ? `डेमो कार्य निर्मित: "${actionTitle}"। संसाधन समन्वय अनुरोध तैयार है।`
+      : `Demo Action Created: "${actionTitle}". Resource coordination request queued.`);
+    setTimeout(() => setDemoActionToast(null), 4000);
+  };
+
   return (
     <div className="space-y-8">
+      {/* Toast Notification for Demo Actions */}
+      {demoActionToast && (
+        <div className="p-4 bg-emerald-900 text-white border border-emerald-500 rounded-2xl text-xs flex items-center justify-between shadow-xl animate-fadeIn">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <strong className="block text-emerald-300 font-extrabold">{t.demoActionCreatedTitle}</strong>
+              <span>{demoActionToast}</span>
+            </div>
+          </div>
+          <button onClick={() => setDemoActionToast(null)} className="text-stone-400 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Critical Emergency Banner */}
-      <div className="bg-gradient-to-br from-rose-950 via-rose-900 to-red-950 text-white rounded-3xl p-6 sm:p-9 shadow-xl border-2 border-rose-600/60 relative overflow-hidden">
-        <div className="relative z-10 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-700 text-white text-xs font-black uppercase tracking-wider animate-pulse">
-              <AlertTriangle className="w-4 h-4 text-amber-300" />
-              <span>
-                {language === 'hi' 
-                  ? 'तत्काल कार्रवाई आवश्यक (अगले ३६-४८ घंटे)' 
-                  : EMERGENCY_SCENARIO.urgency}
-              </span>
+      <div className="bg-gradient-to-br from-rose-950 via-rose-900 to-red-950 text-white rounded-3xl p-6 sm:p-9 shadow-xl border-2 border-rose-600/60 relative overflow-hidden space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-700 text-white text-xs font-black uppercase tracking-wider animate-pulse">
+            <AlertTriangle className="w-4 h-4 text-amber-300" />
+            <span>
+              {language === 'hi' 
+                ? 'तत्काल कार्रवाई आवश्यक (अगले ३६-४८ घंटे)' 
+                : EMERGENCY_SCENARIO.urgency}
             </span>
-            <span className="text-xs font-bold text-rose-200 bg-rose-900/80 px-3 py-1 rounded-full border border-rose-700">
-              {language === 'hi' ? 'मौसम विभाग रडार पुष्टि • आगरा जिला' : 'IMD Radar Confirmation • Agra District'}
-            </span>
-          </div>
+          </span>
+          <span className="text-xs font-bold text-rose-200 bg-rose-900/80 px-3 py-1 rounded-full border border-rose-700">
+            {t.demoScenarioNotice}
+          </span>
+        </div>
 
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-              {t.emergencyBannerTitle}
-            </h1>
-            <p className="text-sm sm:text-base text-rose-100 font-medium max-w-3xl leading-relaxed">
-              {t.emergencyForecastText}
-            </p>
-          </div>
-
-          {/* Affected Crop Status Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-rose-900/60 p-4 rounded-2xl border border-rose-700/60 text-xs">
-            <div>
-              <span className="text-[10px] text-rose-300 block font-medium">
-                {language === 'hi' ? 'जोखिम में खड़ी फसल' : 'Vulnerable Crop'}
-              </span>
-              <span className="text-base font-black text-white">
-                {farmProfile.currentCrop} {language === 'hi' ? '(५ एकड़ आलू)' : '(5 Acres)'}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] text-rose-300 block font-medium">
-                {language === 'hi' ? 'परिपक्वता स्तर' : 'Harvest Readiness'}
-              </span>
-              <span className="text-base font-black text-amber-300">
-                {farmProfile.harvestReadinessPercent}% {language === 'hi' ? 'तैयार' : 'Mature'}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] text-rose-300 block font-medium">
-                {language === 'hi' ? 'मौसम जोखिम' : 'Weather Risk'}
-              </span>
-              <span className="text-base font-black text-rose-300">
-                {language === 'hi' ? 'गंभीर / अति-उच्च' : 'CRITICAL / HIGH'}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] text-rose-300 block font-medium">
-                {language === 'hi' ? 'सुरक्षित समय खिड़की' : 'Action Window'}
-              </span>
-              <span className="text-base font-black text-white">
-                {language === 'hi' ? 'अगले ३६ घंटे' : 'Next 36 Hours'}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-xs text-rose-200/90 leading-relaxed pt-1">
-            {language === 'hi'
-              ? '९२% परिपक्वता पर पहुंच चुके आलू के कंदों में यदि २४ घंटे से अधिक खेत में पानी जमा रहा, तो सॉफ्ट रॉट (जीवाणु सड़न) और फफूंद से १००% फसल नष्ट होने का खतरा है।'
-              : EMERGENCY_SCENARIO.riskAssessment}
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
+            {t.emergencyBannerTitle}
+          </h1>
+          <p className="text-sm sm:text-base text-rose-100 font-medium max-w-3xl leading-relaxed">
+            {t.emergencyForecastText}
           </p>
+        </div>
+
+        {/* Affected Crop Status Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-rose-900/60 p-4 rounded-2xl border border-rose-700/60 text-xs">
+          <div>
+            <span className="text-[10px] text-rose-300 block font-medium">
+              {language === 'hi' ? 'जोखिम में खड़ी फसल' : 'Vulnerable Crop'}
+            </span>
+            <span className="text-base font-black text-white">
+              {farmProfile.currentCrop} ({farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres'})
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-rose-300 block font-medium">
+              {language === 'hi' ? 'परिपक्वता स्तर' : 'Harvest Readiness'}
+            </span>
+            <span className="text-base font-black text-amber-300">
+              {farmProfile.harvestReadinessPercent}% {language === 'hi' ? 'तैयार' : 'Mature'}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-rose-300 block font-medium">
+              {language === 'hi' ? 'मौसम जोखिम' : 'Weather Risk'}
+            </span>
+            <span className="text-base font-black text-rose-300">
+              {language === 'hi' ? 'उच्च (८५ मिमी बारिश)' : 'CRITICAL (85mm Rain)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] text-rose-300 block font-medium">
+              {language === 'hi' ? 'सुरक्षित समय खिड़की' : 'Action Window'}
+            </span>
+            <span className="text-base font-black text-white">
+              {language === 'hi' ? 'अगले ३६ घंटे' : 'Next 36 Hours'}
+            </span>
+          </div>
+        </div>
+
+        {/* Financial Loss Exposure vs Protected Margin */}
+        <div className="p-4 bg-white/10 rounded-2xl border border-white/15 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2">
+            <DollarSign className="w-5 h-5 text-amber-300 shrink-0" />
+            <div>
+              <strong className="block text-amber-200 font-extrabold">{t.financialRiskTitle}</strong>
+              <span className="text-rose-100">{t.financialRiskDesc}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* FarmHub Action Plan Card */}
-      <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="border-b border-stone-100 pb-4">
-          <div className="flex items-center space-x-2 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
-            <ShieldAlert className="w-4 h-4 text-emerald-600" />
-            <span>{language === 'hi' ? 'फार्महब रणनीतिक कार्य-योजना' : 'FarmHub Strategic Protocol'}</span>
+      {/* 1. RISK TO IMPACT PIPELINE */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+          <div className="flex items-center space-x-2">
+            <Activity className="w-5 h-5 text-rose-600" />
+            <h2 className="text-lg font-black text-stone-900">{t.riskImpactTitle}</h2>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900">
-            {t.recommends5Title}
-          </h2>
-          <p className="text-xs text-stone-500 mt-1">
-            {t.recommends5Desc}
+          <span className="text-xs text-stone-400 font-semibold">{farmProfile.location}</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-center text-xs">
+          <div className="p-3 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
+            <span className="font-extrabold text-rose-900 block">{language === 'hi' ? '१. बेमौसम भारी बारिश' : '1. Heavy Rain Event'}</span>
+            <span className="text-[11px] text-rose-700">85mm Forecast</span>
+          </div>
+          <div className="p-3 bg-rose-50 rounded-2xl border border-rose-200 space-y-1">
+            <span className="font-extrabold text-rose-900 block">{language === 'hi' ? '२. खेत में जलभराव' : '2. Waterlogging'}</span>
+            <span className="text-[11px] text-rose-700">&gt;24 Hrs Saturated</span>
+          </div>
+          <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 space-y-1">
+            <span className="font-extrabold text-amber-900 block">{language === 'hi' ? '३. कटाई में रुकावट' : '3. Harvest Delay'}</span>
+            <span className="text-[11px] text-amber-700">Tractor Mud Lock</span>
+          </div>
+          <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 space-y-1">
+            <span className="font-extrabold text-amber-900 block">{language === 'hi' ? '४. कंद सड़न जोखिम' : '4. Soft Rot Infection'}</span>
+            <span className="text-[11px] text-amber-700">Erwinia Spoilage</span>
+          </div>
+          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-1">
+            <span className="font-extrabold text-emerald-900 block">{language === 'hi' ? '५. सुरक्षित पूर्व कटाई' : '5. Saved Revenue'}</span>
+            <span className="text-[11px] text-emerald-700">100% Value Retained</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. CHRONOLOGICAL TIMELINE */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+        <div className="border-b border-stone-100 pb-3">
+          <div className="flex items-center space-x-2 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
+            <Clock className="w-4 h-4 text-emerald-600" />
+            <span>{t.timelineTitle}</span>
+          </div>
+          <p className="text-xs text-stone-500">
+            {t.timelineSub}
           </p>
         </div>
 
-        {/* 5 Recommended Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <div className="p-4 rounded-2xl bg-rose-50 border-l-4 border-l-rose-600 border border-stone-200 space-y-1.5">
+            <div className="flex justify-between items-center text-rose-800 font-black">
+              <span>{language === 'hi' ? 'वर्तमान (०-६ घंटे)' : 'NOW (0–6 Hours)'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-rose-200 text-[10px] uppercase">{t.doNowLabel.split(' ')[0]}</span>
+            </div>
+            <p className="text-stone-700 text-[11px]">
+              {language === 'hi'
+                ? '२ ट्रैक्टर आलू डिगर व १० मजदूरों का दल बुक करें। मिट्टी सूखने के दौरान ऊपरी हिस्से की खुदाई शुरू करें।'
+                : 'Mobilize 2 tractor potato diggers & 10 pickers while topsoil remains firm.'}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-amber-50 border-l-4 border-l-amber-500 border border-stone-200 space-y-1.5">
+            <div className="flex justify-between items-center text-amber-800 font-black">
+              <span>{language === 'hi' ? 'अगले (६-१८ घंटे)' : 'NEXT (6–18 Hours)'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-amber-200 text-[10px] uppercase">{t.prepareLabel.split(' ')[0]}</span>
+            </div>
+            <p className="text-stone-700 text-[11px]">
+              {language === 'hi'
+                ? 'बोरी सिलाई पूरी करें और सीधे खरीदार (पेप्सिको ट्रक) को खेत के गेट पर लोडिंग हेतु कॉल करें।'
+                : 'Complete bagging and direct Eicher tarpaulin truck loading for spot fieldgate offloading.'}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-sky-50 border-l-4 border-l-sky-500 border border-stone-200 space-y-1.5">
+            <div className="flex justify-between items-center text-sky-800 font-black">
+              <span>{language === 'hi' ? 'विंडो (१८-३६ घंटे)' : 'WINDOW (18–36 Hours)'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-sky-200 text-[10px] uppercase">{t.monitorLabel.split(' ')[0]}</span>
+            </div>
+            <p className="text-stone-700 text-[11px]">
+              {language === 'hi'
+                ? 'शेष आलू को खंडौली कोल्ड स्टोरेज चैंबर में स्थानांतरित करें। जलभराव वाली नालियां खोलें।'
+                : 'Transfer un-offloaded stock to Khandauli cold storage pre-cooling bay. Open field drainage.'}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-emerald-50 border-l-4 border-l-emerald-600 border border-stone-200 space-y-1.5">
+            <div className="flex justify-between items-center text-emerald-800 font-black">
+              <span>{language === 'hi' ? 'बारिश के बाद' : 'AFTER RAIN (>36 Hours)'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-200 text-[10px] uppercase">{language === 'hi' ? 'समीक्षा' : 'RE-EVALUATE'}</span>
+            </div>
+            <p className="text-stone-700 text-[11px]">
+              {language === 'hi'
+                ? 'फार्महब इंटेलिजेंस द्वारा अगली फसल (सरसों / चना) हेतु दोमट मिट्टी में नमी का पुनर्मूल्यांकन करें।'
+                : 'Re-run FarmHub Intelligence to analyze post-harvest soil moisture for next crop cycle.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. ACTION PRIORITY TIERS */}
+      <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="border-b border-stone-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center space-x-2 text-emerald-800 text-xs font-black uppercase tracking-wider mb-1">
+              <ShieldAlert className="w-4 h-4 text-emerald-600" />
+              <span>{language === 'hi' ? 'फार्महब रणनीतिक कार्य-योजना' : 'FarmHub Strategic Protocol'}</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-stone-900">
+              {t.recommends5Title}
+            </h2>
+            <p className="text-xs text-stone-500 mt-1">
+              {t.recommends5Desc}
+            </p>
+          </div>
+
+          {setCurrentPage && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setCurrentPage('market')}
+                className="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center space-x-1"
+              >
+                <span>{t.checkMarketBtn}</span>
+              </button>
+              <button
+                onClick={() => setCurrentPage('intelligence')}
+                className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-300 transition-colors cursor-pointer"
+              >
+                <span>{t.reEvaluatePlanBtn}</span>
+              </button>
+              <button
+                onClick={() => setCurrentPage('assistant')}
+                className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-200 transition-colors cursor-pointer"
+              >
+                <span>{t.askAiHelpBtn}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 5 Recommended Actions Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="text-xs font-black text-emerald-700">{t.action1}</span>
+          <div 
+            onClick={() => handleQuickDemoAction(t.action1)}
+            className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1 hover:border-emerald-400 transition-all cursor-pointer"
+          >
+            <span className="text-xs font-black text-emerald-700 block">{t.action1}</span>
             <p className="text-[11px] text-stone-600 leading-snug">
               {t.action1Desc}
             </p>
           </div>
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="text-xs font-black text-emerald-700">{t.action2}</span>
+          <div 
+            onClick={() => handleQuickDemoAction(t.action2)}
+            className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1 hover:border-emerald-400 transition-all cursor-pointer"
+          >
+            <span className="text-xs font-black text-emerald-700 block">{t.action2}</span>
             <p className="text-[11px] text-stone-600 leading-snug">
               {t.action2Desc}
             </p>
           </div>
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="text-xs font-black text-emerald-700">{t.action3}</span>
+          <div 
+            onClick={() => handleQuickDemoAction(t.action3)}
+            className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1 hover:border-emerald-400 transition-all cursor-pointer"
+          >
+            <span className="text-xs font-black text-emerald-700 block">{t.action3}</span>
             <p className="text-[11px] text-stone-600 leading-snug">
               {t.action3Desc}
             </p>
           </div>
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="text-xs font-black text-emerald-700">{t.action4}</span>
+          <div 
+            onClick={() => handleQuickDemoAction(t.action4)}
+            className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1 hover:border-emerald-400 transition-all cursor-pointer"
+          >
+            <span className="text-xs font-black text-emerald-700 block">{t.action4}</span>
             <p className="text-[11px] text-stone-600 leading-snug">
               {t.action4Desc}
             </p>
           </div>
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1">
-            <span className="text-xs font-black text-emerald-700">{t.action5}</span>
+          <div 
+            onClick={() => handleQuickDemoAction(t.action5)}
+            className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1 hover:border-emerald-400 transition-all cursor-pointer"
+          >
+            <span className="text-xs font-black text-emerald-700 block">{t.action5}</span>
             <p className="text-[11px] text-stone-600 leading-snug">
               {t.action5Desc}
             </p>
           </div>
         </div>
 
-        {/* 5 Quick Action Responder Buttons */}
+        {/* Quick Action Responder Filter Buttons */}
         <div className="pt-2">
           <div className="text-xs font-black uppercase tracking-wider text-stone-700 mb-3">
             {language === 'hi' ? 'आपातकालीन सहायता दल सीधे बुलाएं:' : 'Deploy Emergency Responders:'}

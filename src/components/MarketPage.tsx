@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MarketCommodity } from '../types/farmhub';
-import { MARKET_DATA } from '../data/centralData';
+import { MarketCommodity, PageId, FarmProfileData } from '../types/farmhub';
+import { MARKET_DATA, DEFAULT_FARM_PROFILE } from '../data/centralData';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   TrendingUp, 
@@ -13,7 +13,14 @@ import {
   Sparkles, 
   Layers, 
   MessageSquare,
-  FileCheck
+  FileCheck,
+  AlertTriangle,
+  ArrowRight,
+  ShieldCheck,
+  Truck,
+  Scale,
+  DollarSign,
+  Info
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -24,13 +31,26 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-export const MarketPage: React.FC = () => {
+import { AUTHORITATIVE_DEMO_SCENARIO } from '../data/demoScenario';
+
+interface MarketPageProps {
+  farmProfile?: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
+}
+
+export const MarketPage: React.FC<MarketPageProps> = ({ 
+  farmProfile = DEFAULT_FARM_PROFILE, 
+  setCurrentPage 
+}) => {
   const { language, t } = useLanguage();
-  const [selectedCropId, setSelectedCropId] = useState<string>(MARKET_DATA[0].id);
+  
+  // Default to Potato for Ramesh Sharma demo context if matching, else first crop
+  const defaultCrop = MARKET_DATA.find(m => m.crop.toLowerCase().includes(farmProfile.currentCrop.toLowerCase())) || MARKET_DATA[1];
+  const [selectedCropId, setSelectedCropId] = useState<string>(defaultCrop.id);
   const [searchTerm, setSearchTerm] = useState('');
   const [contactSuccess, setContactSuccess] = useState<string | null>(null);
 
-  const selectedCrop = MARKET_DATA.find(m => m.id === selectedCropId) || MARKET_DATA[0];
+  const selectedCrop = MARKET_DATA.find(m => m.id === selectedCropId) || defaultCrop;
 
   const filteredData = MARKET_DATA.filter(m => 
     m.crop.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,6 +63,22 @@ export const MarketPage: React.FC = () => {
       : `Direct connection initiated with ${buyerName}. SMS inquiry and trade specification sent to buyer representative.`);
     setTimeout(() => setContactSuccess(null), 4000);
   };
+
+  // Authoritative financial calculation derived from central demo scenario
+  const demoMarket = AUTHORITATIVE_DEMO_SCENARIO.market;
+  const isPotatoSelected = selectedCrop.id === 'mkt-potato';
+  const totalArea = farmProfile.farmArea || 5;
+
+  const totalQuintals = isPotatoSelected ? demoMarket.quantityQuintals : totalArea * 125;
+  const mandiRate = isPotatoSelected ? demoMarket.mandiPricePerQuintal : selectedCrop.currentPrice;
+  const directBuyerRate = isPotatoSelected ? demoMarket.directBuyerPricePerQuintal : (selectedCrop.verifiedBuyers[0]?.offeredPrice || 1380);
+
+  const mandiTransportFee = isPotatoSelected ? demoMarket.mandiCosts.transport : 40 * totalQuintals;
+  const mandiMiddlmanComm = isPotatoSelected ? demoMarket.mandiCosts.brokerage : Math.round(mandiRate * totalQuintals * 0.06);
+  const mandiNetRev = isPotatoSelected ? demoMarket.mandiNet : (mandiRate * totalQuintals) - mandiTransportFee - mandiMiddlmanComm;
+
+  const directNetRev = isPotatoSelected ? demoMarket.directNet : directBuyerRate * totalQuintals;
+  const netAdvantage = isPotatoSelected ? demoMarket.directAdvantage : directNetRev - mandiNetRev;
 
   return (
     <div className="space-y-6">
@@ -65,7 +101,7 @@ export const MarketPage: React.FC = () => {
         <div className="flex items-center space-x-2">
           <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{language === 'hi' ? 'लाइव मंडी एपीआई फीड' : 'Simulated Live Mandi Feed'}</span>
+            <span>{t.demoScenarioNotice}</span>
           </span>
         </div>
       </div>
@@ -77,12 +113,173 @@ export const MarketPage: React.FC = () => {
         </div>
       )}
 
-      {/* Main Table: Crop | Price | Demand | Trend */}
+      {/* 1. CURRENT CROP MARKET SNAPSHOT */}
+      <div className="bg-gradient-to-br from-emerald-900 via-emerald-950 to-stone-900 p-6 rounded-3xl text-white shadow-md relative overflow-hidden space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-800/80 pb-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {t.marketSnapshotTitle}
+              </span>
+              <span className="text-xs text-emerald-300 font-semibold">
+                • {farmProfile.farmerName} ({farmProfile.location})
+              </span>
+            </div>
+            <h2 className="text-xl font-black mt-1 text-white flex items-center space-x-2">
+              <span>{farmProfile.currentCrop} ({farmProfile.farmArea} {language === 'hi' ? 'एकड़' : 'Acres'})</span>
+              <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                {farmProfile.harvestReadinessPercent}% {language === 'hi' ? 'कटाई परिपक्वता' : 'Harvest Maturity'}
+              </span>
+            </h2>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/10 text-right">
+              <span className="text-[10px] text-emerald-200 block uppercase font-bold">{t.currentPriceLabel}</span>
+              <span className="text-xl font-black text-emerald-400">₹{selectedCrop.currentPrice}/q</span>
+            </div>
+            <div className="bg-white/10 px-4 py-2 rounded-2xl border border-white/10 text-right">
+              <span className="text-[10px] text-emerald-200 block uppercase font-bold">{t.priceTrendLabel}</span>
+              <span className="text-base font-black text-rose-400 flex items-center justify-end">
+                <ArrowDownRight className="w-4 h-4 mr-0.5" />
+                -₹70/q (Agra Mandi)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. MANDI VS DIRECT BUYER COMPARISON */}
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-extrabold text-emerald-200 uppercase tracking-wider flex items-center space-x-1.5">
+              <Scale className="w-4 h-4 text-emerald-400" />
+              <span>{t.mandiVsDirectTitle}</span>
+            </h3>
+            <span className="text-[11px] text-stone-300">
+              {t.mandiVsDirectSub}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Option A: Mandi Yard */}
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-extrabold text-sm text-stone-200">{t.mandiOptionLabel}</h4>
+                  <span className="text-[10px] text-stone-400">Agra APMC Mandi Yard</span>
+                </div>
+                <span className="text-sm font-black text-stone-300">₹{mandiRate}/q</span>
+              </div>
+              <div className="text-xs text-stone-300 space-y-1 pt-1 border-t border-white/10">
+                <div className="flex justify-between text-[11px]">
+                  <span>{language === 'hi' ? 'सकल प्राप्ति (६२५ क्विंटल):' : 'Gross Return (625q):'}</span>
+                  <span>₹{(mandiRate * totalQuintals).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-rose-300">
+                  <span>{language === 'hi' ? 'परिवहन व लोड शुल्क:' : 'Transport & Loading Fee:'}</span>
+                  <span>-₹{mandiTransportFee.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-rose-300">
+                  <span>{language === 'hi' ? 'आढ़त कमीशन (६%):' : 'Mandi Commission (6%):'}</span>
+                  <span>-₹{mandiMiddlmanComm.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-black text-xs pt-1 border-t border-white/10 text-white">
+                  <span>{language === 'hi' ? 'शुद्ध हाथ में जमा:' : 'Net Bank Payout:'}</span>
+                  <span>₹{mandiNetRev.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Option B: Direct Corporate Fieldgate Buyer */}
+            <div className="p-4 rounded-2xl bg-emerald-950/80 border-2 border-emerald-400/60 space-y-2 relative shadow-lg">
+              <span className="absolute -top-2.5 right-4 bg-emerald-400 text-emerald-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-full tracking-wider shadow-xs">
+                {language === 'hi' ? 'अनुशंसित विकल्प' : 'Recommended Action'}
+              </span>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-extrabold text-sm text-emerald-300">{t.directBuyerOptionLabel}</h4>
+                  <span className="text-[10px] text-emerald-200">Pepsico / Balaji Chips Direct Contract</span>
+                </div>
+                <span className="text-base font-black text-emerald-400">₹{directBuyerRate}/q</span>
+              </div>
+              <div className="text-xs text-emerald-100 space-y-1 pt-1 border-t border-emerald-800">
+                <div className="flex justify-between text-[11px]">
+                  <span>{language === 'hi' ? 'सकल नकद भुगतान (६२५ क्विंटल):' : 'Gross Cash Payment (625q):'}</span>
+                  <span>₹{directNetRev.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-emerald-300">
+                  <span>{language === 'hi' ? 'खेत से सीधी लोडिंग (परिवहन मुक्त):' : 'Direct Field Loading (Zero Freight):'}</span>
+                  <span>₹0</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-emerald-300">
+                  <span>{language === 'hi' ? 'बिचौलिया कमीशन:' : 'Middleman Brokerage:'}</span>
+                  <span>₹0</span>
+                </div>
+                <div className="flex justify-between font-black text-xs pt-1 border-t border-emerald-700 text-emerald-300">
+                  <span>{language === 'hi' ? 'शुद्ध हाथ में जमा:' : 'Net Bank Payout:'}</span>
+                  <span className="text-emerald-400 text-sm">₹{directNetRev.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                <strong>{t.netDiffLabel}:</strong> {language === 'hi' ? 'सीधे खरीदार को बेचने पर ५ एकड़ पर ' : 'Selling direct earns '} 
+                <strong className="text-emerald-400 font-extrabold">₹{netAdvantage.toLocaleString('en-IN')}</strong> 
+                {language === 'hi' ? ' अतिरिक्त शुद्ध मुनाफा होता है।' : ' additional net profit vs mandi.'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. MARKET SIGNAL ACTION RECOMMENDATION */}
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start space-x-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-extrabold text-sm text-amber-300">{t.marketActionTitle}</h4>
+              <p className="text-xs text-amber-100/90 mt-0.5">
+                {t.marketActionDesc}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 shrink-0">
+            {setCurrentPage && (
+              <>
+                <button
+                  onClick={() => setCurrentPage('emergency')}
+                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs shadow-xs transition-colors cursor-pointer flex items-center space-x-1"
+                >
+                  <span>{t.reviewEmergencyBtn}</span>
+                </button>
+                <button
+                  onClick={() => setCurrentPage('intelligence')}
+                  className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-colors cursor-pointer"
+                >
+                  <span>{t.viewIntelligenceBtn}</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Rate Board */}
       <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
         <div className="p-5 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-base font-extrabold text-stone-900">
-            {language === 'hi' ? 'दैनिक थोक भाव बोर्ड' : 'Market Rate Board'}
-          </h2>
+          <div>
+            <h2 className="text-base font-extrabold text-stone-900">
+              {language === 'hi' ? 'दैनिक थोक भाव बोर्ड' : 'Market Rate Board'}
+            </h2>
+            <span className="text-[11px] text-stone-500">
+              {language === 'hi' ? 'आगरा व निकटवर्ती APMC मंडियां' : 'Agra & Neighboring APMC Mandis'}
+            </span>
+          </div>
+
           <div className="relative min-w-[240px]">
             <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
             <input
@@ -172,7 +369,7 @@ export const MarketPage: React.FC = () => {
                           e.stopPropagation();
                           setSelectedCropId(item.id);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-stone-900 text-white font-bold text-xs hover:bg-stone-800 transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-stone-900 text-white font-bold text-xs hover:bg-stone-800 transition-colors cursor-pointer"
                       >
                         {t.viewBuyersBtn}
                       </button>
@@ -194,7 +391,7 @@ export const MarketPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                  {language === 'hi' ? '७-दिवसीय मंडी रुझान' : '7-Day APMC Trend'}
+                  {t.simulatedTrendNotice}
                 </span>
                 <h3 className="font-black text-base text-stone-900">
                   {selectedCrop.crop} {language === 'hi' ? 'मूल्य रेखाचित्र' : 'Price Curve'}

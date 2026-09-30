@@ -14,6 +14,12 @@ import { SchemesPage } from './components/SchemesPage';
 import { ServicesPage } from './components/ServicesPage';
 import { CommunityPage } from './components/CommunityPage';
 import { SeekhoPage } from './components/SeekhoPage';
+import { AgriDoctor } from './components/AgriDoctor';
+import { FertilizerCalculator } from './components/FertilizerCalculator';
+import { FieldManagement } from './components/FieldManagement';
+import { FinanceTracker } from './components/FinanceTracker';
+import { Marketplace } from './components/Marketplace';
+import { MandiPrices } from './components/MandiPrices';
 import { Sprout } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -66,15 +72,24 @@ const AppContent: React.FC = () => {
         )}
 
         {currentPage === 'market' && (
-          <MarketPage />
+          <MarketPage
+            farmProfile={farmProfile}
+            setCurrentPage={setCurrentPage}
+          />
         )}
 
         {currentPage === 'emergency' && (
-          <EmergencyPage farmProfile={farmProfile} />
+          <EmergencyPage 
+            farmProfile={farmProfile}
+            setCurrentPage={setCurrentPage}
+          />
         )}
 
         {currentPage === 'assistant' && (
-          <AIAssistant farmProfile={farmProfile} />
+          <AIAssistant 
+            farmProfile={farmProfile}
+            setCurrentPage={setCurrentPage}
+          />
         )}
 
         {currentPage === 'schemes' && (
@@ -91,6 +106,30 @@ const AppContent: React.FC = () => {
 
         {currentPage === 'seekho' && (
           <SeekhoPage />
+        )}
+
+        {currentPage === 'agriDoctor' && (
+          <AgriDoctor farmProfile={farmProfile} setCurrentPage={setCurrentPage} />
+        )}
+
+        {currentPage === 'fertilizer' && (
+          <FertilizerCalculator farmProfile={farmProfile} setCurrentPage={setCurrentPage} />
+        )}
+
+        {currentPage === 'fieldManagement' && (
+          <FieldManagement farmProfile={farmProfile} setCurrentPage={setCurrentPage} />
+        )}
+
+        {currentPage === 'finance' && (
+          <FinanceTracker farmProfile={farmProfile} setCurrentPage={setCurrentPage} />
+        )}
+
+        {currentPage === 'marketplace' && (
+          <Marketplace farmProfile={farmProfile} setCurrentPage={setCurrentPage} />
+        )}
+
+        {currentPage === 'mandi' && (
+          <MandiPrices setCurrentPage={setCurrentPage} />
         )}
       </main>
 
@@ -122,12 +161,20 @@ const AppContent: React.FC = () => {
               2. {language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}
             </button>
             <button
+              onClick={() => setCurrentPage('profile')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
+                currentPage === 'profile' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
+              }`}
+            >
+              3. {language === 'hi' ? 'प्रोफाइल' : 'Profile'}
+            </button>
+            <button
               onClick={() => setCurrentPage('intelligence')}
               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
                 currentPage === 'intelligence' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
               }`}
             >
-              3. {language === 'hi' ? 'बुद्धिमत्ता' : 'Intelligence'}
+              4. {language === 'hi' ? 'बुद्धिमत्ता' : 'Intelligence'}
             </button>
             <button
               onClick={() => setCurrentPage('market')}
@@ -135,7 +182,7 @@ const AppContent: React.FC = () => {
                 currentPage === 'market' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
               }`}
             >
-              4. {language === 'hi' ? 'मंडी' : 'Market'}
+              5. {language === 'hi' ? 'मंडी' : 'Market'}
             </button>
             <button
               onClick={() => setCurrentPage('emergency')}
@@ -143,7 +190,7 @@ const AppContent: React.FC = () => {
                 currentPage === 'emergency' ? 'bg-rose-600 text-white' : 'text-rose-300 hover:text-white'
               }`}
             >
-              5. {language === 'hi' ? 'आपातकाल' : 'Emergency'}
+              6. {language === 'hi' ? 'आपातकाल' : 'Emergency'}
             </button>
             <button
               onClick={() => setCurrentPage('assistant')}
@@ -151,7 +198,7 @@ const AppContent: React.FC = () => {
                 currentPage === 'assistant' ? 'bg-indigo-600 text-white' : 'text-indigo-300 hover:text-white'
               }`}
             >
-              6. {language === 'hi' ? 'एआई सहायक' : 'AI Assistant'}
+              7. {language === 'hi' ? 'एआई सहायक' : 'AI Assistant'}
             </button>
           </div>
         </div>

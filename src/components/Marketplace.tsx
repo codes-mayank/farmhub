@@ -15,6 +15,8 @@ import {
   MessageSquare
 } from 'lucide-react';
 
+import { useLanguage } from '../context/LanguageContext';
+
 interface MarketplaceProps {
   produceListings: ProduceListing[];
   equipmentListings: EquipmentListing[];
@@ -26,6 +28,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
   equipmentListings,
   onOpenProduceModal
 }) => {
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'produce' | 'equipment'>('produce');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState<string>('All');
@@ -75,20 +78,22 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
               <ShoppingBag className="w-5 h-5" />
             </span>
             <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900">
-              Agri-Marketplace & Equipment Hub
+              {language === 'hi' ? 'कृषि बाज़ार एवं यंत्रीकरण हब' : 'Agri-Marketplace & Equipment Hub'}
             </h1>
           </div>
           <p className="text-xs text-stone-500 mt-1">
-            Buy and sell harvest directly at farmgate prices with zero middlemen cut. Rent modern tractors, harvesters, and spraying drones.
+            {language === 'hi'
+              ? 'बिना किसी बिचौलिए के सीधे खेत से उपज बेचें और खरीदें। आधुनिक ट्रैक्टर, हार्वेस्टर व स्प्रे ड्रोन किराए पर लें।'
+              : 'Buy and sell harvest directly at farmgate prices with zero middlemen cut. Rent modern tractors, harvesters, and spraying drones.'}
           </p>
         </div>
 
         <button
           onClick={onOpenProduceModal}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-sm shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
+          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>List Produce for Sale</span>
+          <span>{language === 'hi' ? 'बिक्री हेतु उपज जोड़ें' : 'List Produce for Sale'}</span>
         </button>
       </div>
 

@@ -69,9 +69,12 @@ export const MandiPrices: React.FC<MandiPricesProps> = ({ mandiPrices }) => {
         </div>
 
         <div className="flex items-center space-x-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+            Controlled Demo Data Feed
+          </span>
           <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center space-x-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Live APMC Feed Active</span>
+            <span>Agra APMC Feed Active</span>
           </span>
         </div>
       </div>

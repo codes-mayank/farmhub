@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FarmExpense, FieldPlot } from '../types';
+import { FarmProfileData, PageId } from '../types/farmhub';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   Wallet, 
   ArrowUpRight, 
@@ -10,32 +12,88 @@ import {
   DollarSign, 
   Tag, 
   Layers,
-  PieChart
+  PieChart,
+  Bot
 } from 'lucide-react';
 
 interface FinanceTrackerProps {
-  expenses: FarmExpense[];
-  setExpenses: React.Dispatch<React.SetStateAction<FarmExpense[]>>;
-  fields: FieldPlot[];
+  expenses?: FarmExpense[];
+  setExpenses?: React.Dispatch<React.SetStateAction<FarmExpense[]>>;
+  fields?: FieldPlot[];
+  farmProfile?: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
 }
 
+const DEFAULT_TRANSACTIONS: FarmExpense[] = [
+  {
+    id: 't-1',
+    fieldId: 'f-1',
+    fieldName: 'Potato 5-Acre Main Block',
+    crop: 'Potato',
+    category: 'Fertilizer',
+    type: 'Expense',
+    amount: 19500,
+    date: '2026-11-20',
+    description: 'DAP (5 bags) & Urea (6 bags) for initial sowing'
+  },
+  {
+    id: 't-2',
+    fieldId: 'f-1',
+    fieldName: 'Potato 5-Acre Main Block',
+    crop: 'Potato',
+    category: 'Seeds',
+    type: 'Expense',
+    amount: 38000,
+    date: '2026-11-15',
+    description: 'Kufri Bahar certified tuber seeds (25 quintals)'
+  },
+  {
+    id: 't-3',
+    fieldId: 'f-1',
+    fieldName: 'Potato 5-Acre Main Block',
+    crop: 'Potato',
+    category: 'Labor',
+    type: 'Expense',
+    amount: 9000,
+    date: '2026-11-16',
+    description: '10 workers for tuber planting & earthing up'
+  },
+  {
+    id: 't-4',
+    fieldId: 'f-1',
+    fieldName: 'Potato 5-Acre Main Block',
+    crop: 'Potato',
+    category: 'Sale Income',
+    type: 'Income',
+    amount: 862500,
+    date: '2027-02-15',
+    description: 'PepsiCo Direct Fieldgate Offload (625 quintals @ ₹1,380/q)'
+  }
+];
+
 export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
-  expenses,
+  expenses = DEFAULT_TRANSACTIONS,
   setExpenses,
-  fields
+  fields = [],
+  farmProfile,
+  setCurrentPage
 }) => {
+  const { language, t } = useLanguage();
+  const [localExpenses, setLocalExpenses] = useState<FarmExpense[]>(expenses);
+  const activeExpenses = setExpenses ? expenses : localExpenses;
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedFieldFilter, setSelectedFieldFilter] = useState<string>('All');
   
   // New transaction form state
   const [type, setType] = useState<'Expense' | 'Income'>('Expense');
-  const [fieldId, setFieldId] = useState(fields[0]?.id || '');
+  const [fieldId, setFieldId] = useState(fields[0]?.id || 'f-1');
   const [category, setCategory] = useState<FarmExpense['category']>('Fertilizer');
   const [amount, setAmount] = useState<number>(2500);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const filteredTransactions = expenses.filter(e => {
+  const filteredTransactions = activeExpenses.filter(e => {
     return selectedFieldFilter === 'All' || e.fieldId === selectedFieldFilter;
   });
 
@@ -50,12 +108,12 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
   const netProfit = totalIncome - totalExpenses;
 
   const handleAddTransaction = () => {
-    const targetField = fields.find(f => f.id === fieldId) || fields[0];
+    const targetField = fields.find(f => f.id === fieldId);
     const newRecord: FarmExpense = {
       id: `trans-${Date.now()}`,
-      fieldId: targetField?.id || 'general',
-      fieldName: targetField?.name || 'General Farm Operation',
-      crop: targetField?.crop || 'Multiple',
+      fieldId: targetField?.id || 'f-1',
+      fieldName: targetField?.name || 'Potato 5-Acre Main Block',
+      crop: targetField?.crop || farmProfile?.currentCrop || 'Potato',
       category,
       type,
       amount: Number(amount),
@@ -63,74 +121,89 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
       description: description || `${category} expenditure`
     };
 
-    setExpenses(prev => [newRecord, ...prev]);
+    const updater = (prev: FarmExpense[]) => [newRecord, ...prev];
+    if (setExpenses) setExpenses(updater);
+    else setLocalExpenses(updater);
+
     setShowAddModal(false);
     setDescription('');
   };
 
   const handleDelete = (id: string) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
+    const updater = (prev: FarmExpense[]) => prev.filter(e => e.id !== id);
+    if (setExpenses) setExpenses(updater);
+    else setLocalExpenses(updater);
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
             <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
               <Wallet className="w-5 h-5" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900">
-              Farm Financial Book & Expense Ledger
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+              {language === 'hi' ? 'कृषि वित्त खाता व लागत-मुनाफा बही' : 'Farm Financial Book & Expense Ledger'}
             </h1>
           </div>
           <p className="text-xs text-stone-500 mt-1">
-            Track seed, fertilizer, diesel, and labor expenses against crop sales to calculate net profit per acre.
+            {language === 'hi'
+              ? 'आपकी ५ एकड़ जमीन पर बीज, खाद, डीजल, मजदूर खर्च और उपज बिक्री का पाई-पाई का हिसाब।'
+              : 'Track seed, fertilizer, diesel, and labor expenses against crop sales to calculate net profit per acre.'}
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-sm shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Record Expense / Sale</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{language === 'hi' ? 'नया खर्च / आय जोड़ें' : 'Record Expense / Sale'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Gross Sales Income</span>
-            <div className="p-1.5 bg-green-100 text-green-700 rounded-lg">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              {language === 'hi' ? 'सकल फसल बिक्री आय' : 'Gross Sales Income'}
+            </span>
+            <div className="p-1.5 bg-green-100 text-green-700 rounded-xl">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-green-700 mt-2">
             ₹{totalIncome.toLocaleString('en-IN')}
           </div>
-          <p className="text-[11px] text-stone-400 mt-0.5">Crop bookings & market sales</p>
+          <p className="text-[11px] text-stone-400 mt-0.5">{language === 'hi' ? 'खेत से सीधी बिक्री व मंडी आय' : 'Crop bookings & market sales'}</p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Total Cultivation Costs</span>
-            <div className="p-1.5 bg-rose-100 text-rose-700 rounded-lg">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              {language === 'hi' ? 'कुल खेती लागत' : 'Total Cultivation Costs'}
+            </span>
+            <div className="p-1.5 bg-rose-100 text-rose-700 rounded-xl">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-rose-700 mt-2">
             ₹{totalExpenses.toLocaleString('en-IN')}
           </div>
-          <p className="text-[11px] text-stone-400 mt-0.5">Seeds, fertilizers, labor, machinery</p>
+          <p className="text-[11px] text-stone-400 mt-0.5">{language === 'hi' ? 'बीज, खाद, मजदूर, जुताई' : 'Seeds, fertilizers, labor, machinery'}</p>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs">
+        <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Net Farm Profit</span>
-            <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+            <span className="text-xs font-bold uppercase tracking-wider text-stone-500">
+              {language === 'hi' ? 'शुद्ध खेत मुनाफा' : 'Net Farm Profit'}
+            </span>
+            <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-xl">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
@@ -138,21 +211,21 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
             ₹{netProfit.toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-stone-400 mt-0.5">
-            {netProfit >= 0 ? 'Profitable cultivation season' : 'Operating at an initial investment deficit'}
+            {netProfit >= 0 ? (language === 'hi' ? 'लाभदायक रबी सीजन' : 'Profitable cultivation season') : 'Operating deficit'}
           </p>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex items-center justify-between">
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <span className="text-xs font-bold text-stone-700">Filter By Plot:</span>
+          <span className="text-xs font-bold text-stone-700">{language === 'hi' ? 'फील्ड प्लॉट चुनें:' : 'Filter By Plot:'}</span>
           <select
             value={selectedFieldFilter}
             onChange={(e) => setSelectedFieldFilter(e.target.value)}
-            className="text-xs py-1.5 px-3 rounded-lg border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
+            className="text-xs py-1.5 px-3 rounded-xl border border-stone-300 bg-white focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="All">All Farm Fields ({fields.length} Plots)</option>
+            <option value="All">{language === 'hi' ? 'सभी खेत प्लॉट्स' : 'All Farm Fields'}</option>
             {fields.map(f => (
               <option key={f.id} value={f.id}>{f.name} ({f.crop})</option>
             ))}
@@ -165,10 +238,10 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
       </div>
 
       {/* Transactions Ledger Table */}
-      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs">
+      <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 font-bold uppercase tracking-wider text-[10px]">
+            <thead className="bg-stone-50 border-b border-stone-200 text-stone-600 font-extrabold uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="py-3.5 px-4">Date</th>
                 <th className="py-3.5 px-4">Field / Crop</th>
@@ -220,10 +293,34 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
         </div>
       </div>
 
+      {/* Navigation Return Links */}
+      {setCurrentPage && (
+        <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="text-stone-600 font-medium">
+            {language === 'hi' ? 'वित्तीय आंकड़े फसल बुद्धिमत्ता से जुड़े हैं:' : 'Financial ledgers feed crop profitability models:'}
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage('intelligence')}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors cursor-pointer"
+            >
+              {language === 'hi' ? 'फसल बुद्धिमत्ता →' : 'Crop Intelligence →'}
+            </button>
+            <button
+              onClick={() => setCurrentPage('assistant')}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-200 transition-colors cursor-pointer flex items-center space-x-1"
+            >
+              <Bot className="w-3.5 h-3.5" />
+              <span>{language === 'hi' ? 'एआई सलाह' : 'Ask AI'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Add Transaction Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <h3 className="text-base font-extrabold text-stone-900">Record Farm Transaction</h3>
               <button 
@@ -234,13 +331,12 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
               </button>
             </div>
 
-            <div className="space-y-3">
-              {/* Type Switcher */}
+            <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setType('Expense')}
-                  className={`py-2 text-xs font-bold rounded-lg border cursor-pointer ${
+                  className={`py-2 text-xs font-bold rounded-xl border cursor-pointer ${
                     type === 'Expense' 
                       ? 'bg-rose-50 text-rose-800 border-rose-300' 
                       : 'bg-stone-50 text-stone-600 border-stone-200'
@@ -251,7 +347,7 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                 <button
                   type="button"
                   onClick={() => setType('Income')}
-                  className={`py-2 text-xs font-bold rounded-lg border cursor-pointer ${
+                  className={`py-2 text-xs font-bold rounded-xl border cursor-pointer ${
                     type === 'Income' 
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
                       : 'bg-stone-50 text-stone-600 border-stone-200'
@@ -266,8 +362,9 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                 <select
                   value={fieldId}
                   onChange={(e) => setFieldId(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500 bg-white"
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 bg-white"
                 >
+                  <option value="f-1">Potato 5-Acre Main Block</option>
                   {fields.map(f => (
                     <option key={f.id} value={f.id}>{f.name} ({f.crop})</option>
                   ))}
@@ -280,7 +377,7 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500 bg-white"
+                    className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500 bg-white"
                   >
                     {type === 'Expense' ? (
                       <>
@@ -307,7 +404,7 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                     min="1"
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
@@ -318,7 +415,7 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -326,10 +423,10 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
                 <label className="block text-xs font-bold text-stone-700 mb-1">Description / Receipt Note</label>
                 <input
                   type="text"
-                  placeholder="e.g. 5 bags of DAP purchased from cooperative"
+                  placeholder="e.g. PepsiCo Direct Fieldgate Harvest Offload"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-xs p-2.5 rounded-xl border border-stone-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -337,13 +434,13 @@ export const FinanceTracker: React.FC<FinanceTrackerProps> = ({
             <div className="flex items-center justify-end space-x-2 pt-3 border-t border-stone-100">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-xs font-medium text-stone-600 rounded-lg hover:bg-stone-100 cursor-pointer"
+                className="px-4 py-2 text-xs font-medium text-stone-600 rounded-xl hover:bg-stone-100 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddTransaction}
-                className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-colors cursor-pointer"
               >
                 Save Transaction
               </button>

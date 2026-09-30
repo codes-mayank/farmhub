@@ -9,7 +9,13 @@ export type PageId =
   | 'schemes'
   | 'services'
   | 'community'
-  | 'seekho';
+  | 'seekho'
+  | 'agriDoctor'
+  | 'fertilizer'
+  | 'fieldManagement'
+  | 'finance'
+  | 'marketplace'
+  | 'mandi';
 
 export interface FarmProfileData {
   farmerName: string;

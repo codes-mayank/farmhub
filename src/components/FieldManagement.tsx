@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { FieldPlot } from '../types';
+import { FarmProfileData, PageId } from '../types/farmhub';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   MapPin, 
   Plus, 
@@ -13,27 +15,71 @@ import {
   Activity,
   ArrowRight,
   Clock,
-  FileText
+  FileText,
+  Bot
 } from 'lucide-react';
 
 interface FieldManagementProps {
-  fields: FieldPlot[];
-  setFields: React.Dispatch<React.SetStateAction<FieldPlot[]>>;
-  onOpenNewFieldModal: () => void;
+  fields?: FieldPlot[];
+  setFields?: React.Dispatch<React.SetStateAction<FieldPlot[]>>;
+  onOpenNewFieldModal?: () => void;
+  farmProfile?: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
 }
 
+const DEFAULT_FIELDS: FieldPlot[] = [
+  {
+    id: 'f-1',
+    name: 'North Block (Main Field)',
+    areaAcres: 3.0,
+    crop: 'Potato',
+    variety: 'Kufri Bahar',
+    sowingDate: '2026-11-15',
+    expectedHarvestDate: '2027-02-15',
+    stage: 'Harvest Ready',
+    irrigationType: 'Canal / Drip',
+    soilType: 'Loamy',
+    healthScore: 94,
+    lastWatered: 'Yesterday (2 hours)',
+    nextScheduledTask: 'Emergency harvest before rain event',
+    notes: 'Tuber skin is firm. Excellent size 45-65mm. Immediate harvesting advised.'
+  },
+  {
+    id: 'f-2',
+    name: 'South Block (Channel Side)',
+    areaAcres: 2.0,
+    crop: 'Potato',
+    variety: 'Kufri Bahar',
+    sowingDate: '2026-11-18',
+    expectedHarvestDate: '2027-02-18',
+    stage: 'Harvest Ready',
+    irrigationType: 'Borewell Sprinkler',
+    soilType: 'Loamy',
+    healthScore: 91,
+    lastWatered: '2 days ago',
+    nextScheduledTask: 'Foliar dehaulming cutting',
+    notes: 'Field edge exhibits minor soil saturation. Clear drainage ditches.'
+  }
+];
+
 export const FieldManagement: React.FC<FieldManagementProps> = ({
-  fields,
+  fields = DEFAULT_FIELDS,
   setFields,
-  onOpenNewFieldModal
+  onOpenNewFieldModal,
+  farmProfile,
+  setCurrentPage
 }) => {
-  const [selectedFieldId, setSelectedFieldId] = useState<string>(fields[0]?.id || '');
+  const { language, t } = useLanguage();
+  const [localFields, setLocalFields] = useState<FieldPlot[]>(fields);
+  const activeFields = setFields ? fields : localFields;
+
+  const [selectedFieldId, setSelectedFieldId] = useState<string>(activeFields[0]?.id || 'f-1');
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [tempNotes, setTempNotes] = useState<string>('');
   const [waterModalField, setWaterModalField] = useState<FieldPlot | null>(null);
   const [waterDuration, setWaterDuration] = useState('2 hours');
 
-  const selectedField = fields.find(f => f.id === selectedFieldId) || fields[0];
+  const selectedField = activeFields.find(f => f.id === selectedFieldId) || activeFields[0];
 
   const stages: FieldPlot['stage'][] = [
     'Germination',
@@ -44,27 +90,21 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
   ];
 
   const handleStageChange = (fieldId: string, newStage: FieldPlot['stage']) => {
-    setFields(prev => prev.map(f => {
-      if (f.id === fieldId) {
-        return { ...f, stage: newStage };
-      }
-      return f;
-    }));
+    const updater = (prev: FieldPlot[]) => prev.map(f => f.id === fieldId ? { ...f, stage: newStage } : f);
+    if (setFields) setFields(updater);
+    else setLocalFields(updater);
   };
 
   const handleSaveNotes = (fieldId: string) => {
-    setFields(prev => prev.map(f => {
-      if (f.id === fieldId) {
-        return { ...f, notes: tempNotes };
-      }
-      return f;
-    }));
+    const updater = (prev: FieldPlot[]) => prev.map(f => f.id === fieldId ? { ...f, notes: tempNotes } : f);
+    if (setFields) setFields(updater);
+    else setLocalFields(updater);
     setEditingNotesId(null);
   };
 
   const handleLogIrrigation = () => {
     if (!waterModalField) return;
-    setFields(prev => prev.map(f => {
+    const updater = (prev: FieldPlot[]) => prev.map(f => {
       if (f.id === waterModalField.id) {
         return {
           ...f,
@@ -73,41 +113,41 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
         };
       }
       return f;
-    }));
+    });
+    if (setFields) setFields(updater);
+    else setLocalFields(updater);
     setWaterModalField(null);
-  };
-
-  const handleDeleteField = (fieldId: string) => {
-    if (confirm('Are you sure you want to remove this field plot?')) {
-      setFields(prev => prev.filter(f => f.id !== fieldId));
-    }
   };
 
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-xs">
         <div>
           <div className="flex items-center space-x-2">
             <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800">
               <Layers className="w-5 h-5" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-stone-900">
-              Field & Crop Lifecycle Management
+            <h1 className="text-xl sm:text-2xl font-black text-stone-900">
+              {language === 'hi' ? 'खेत एवं फसल जीवन-चक्र प्रबंधन' : 'Field & Crop Lifecycle Management'}
             </h1>
           </div>
           <p className="text-xs text-stone-500 mt-1">
-            Track vegetative stages, irrigation cycles, soil types, and planned agro operations across your farm.
+            {language === 'hi'
+              ? 'अपनी ५ एकड़ भूमि के प्लॉट्स में वृद्धि चरणों, सिंचाई चक्रों और कृषि कार्यों का हिसाब रखें।'
+              : 'Track vegetative stages, irrigation cycles, soil types, and planned agro operations across your farm.'}
           </p>
         </div>
 
-        <button
-          onClick={onOpenNewFieldModal}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-sm shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Field Plot</span>
-        </button>
+        {onOpenNewFieldModal && (
+          <button
+            onClick={onOpenNewFieldModal}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-md hover:bg-emerald-800 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{language === 'hi' ? 'नया प्लॉट जोड़ें' : 'Add New Field Plot'}</span>
+          </button>
+        )}
       </div>
 
       {/* Main Grid: Field Selector & Detail View */}
@@ -116,17 +156,17 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
         {/* Left Column: Plot List & Quick Selector */}
         <div className="space-y-3">
           <div className="text-xs font-bold uppercase tracking-wider text-stone-500 px-1">
-            Registered Plots ({fields.length})
+            {language === 'hi' ? `पंजीकृत प्लॉट्स (${activeFields.length})` : `Registered Plots (${activeFields.length})`}
           </div>
 
           <div className="space-y-2.5">
-            {fields.map((field) => {
+            {activeFields.map((field) => {
               const isSelected = field.id === selectedFieldId;
               return (
                 <div
                   key={field.id}
                   onClick={() => setSelectedFieldId(field.id)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-emerald-50/80 border-emerald-600 shadow-sm ring-1 ring-emerald-600'
                       : 'bg-white border-stone-200 hover:border-emerald-300 hover:bg-stone-50/60'
@@ -134,8 +174,8 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-stone-900">{field.name}</h3>
-                      <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+                      <h3 className="font-extrabold text-sm text-stone-900">{field.name}</h3>
+                      <p className="text-xs font-bold text-emerald-700 mt-0.5">
                         {field.crop} ({field.variety})
                       </p>
                     </div>
@@ -162,7 +202,7 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
         {/* Right 2 Columns: Detailed Selected Plot Workspace */}
         {selectedField ? (
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-xs space-y-6">
+            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-6">
               
               {/* Plot Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-stone-100 gap-3">
@@ -173,7 +213,7 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
                       {selectedField.areaAcres} Acres
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-emerald-700 mt-0.5">
+                  <p className="text-xs font-bold text-emerald-700 mt-0.5">
                     {selectedField.crop} • Variety: {selectedField.variety}
                   </p>
                 </div>
@@ -181,17 +221,10 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setWaterModalField(selectedField)}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold hover:bg-sky-100 transition-colors cursor-pointer"
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold hover:bg-sky-100 transition-colors cursor-pointer"
                   >
                     <Droplets className="w-3.5 h-3.5 text-sky-600" />
-                    <span>Log Irrigation</span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteField(selectedField.id)}
-                    className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Delete plot"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                    <span>{language === 'hi' ? 'सिंचाई दर्ज करें' : 'Log Irrigation'}</span>
                   </button>
                 </div>
               </div>
@@ -200,7 +233,7 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                    Crop Growth Lifecycle Tracker
+                    {language === 'hi' ? 'फसल विकास चरण ट्रैकर' : 'Crop Growth Lifecycle Tracker'}
                   </span>
                   <span className="text-xs font-semibold text-emerald-700">
                     Current: <strong>{selectedField.stage}</strong>
@@ -236,34 +269,34 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
               </div>
 
               {/* Plot Technical Specifications */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-stone-50/70 p-4 rounded-xl border border-stone-200/60">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-stone-50/70 p-4 rounded-2xl border border-stone-200/60 text-xs">
                 <div>
-                  <div className="text-[11px] text-stone-500 font-medium">Soil Classification</div>
-                  <div className="text-xs font-bold text-stone-900 mt-0.5">{selectedField.soilType}</div>
+                  <div className="text-[11px] text-stone-500 font-medium">Soil Type</div>
+                  <div className="font-bold text-stone-900 mt-0.5">{selectedField.soilType}</div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-stone-500 font-medium">Irrigation System</div>
-                  <div className="text-xs font-bold text-stone-900 mt-0.5">{selectedField.irrigationType}</div>
+                  <div className="text-[11px] text-stone-500 font-medium">Irrigation</div>
+                  <div className="font-bold text-stone-900 mt-0.5">{selectedField.irrigationType}</div>
                 </div>
                 <div>
                   <div className="text-[11px] text-stone-500 font-medium">Sowing Date</div>
-                  <div className="text-xs font-bold text-stone-900 mt-0.5">{selectedField.sowingDate}</div>
+                  <div className="font-bold text-stone-900 mt-0.5">{selectedField.sowingDate}</div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-stone-500 font-medium">Expected Harvest</div>
-                  <div className="text-xs font-bold text-emerald-700 mt-0.5">{selectedField.expectedHarvestDate}</div>
+                  <div className="text-[11px] text-stone-500 font-medium">Harvest Window</div>
+                  <div className="font-bold text-emerald-700 mt-0.5">{selectedField.expectedHarvestDate}</div>
                 </div>
               </div>
 
               {/* Next Scheduled Farm Task */}
-              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-4">
+              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-4">
                 <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg shrink-0">
+                  <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl shrink-0">
                     <Clock className="w-4 h-4 text-emerald-700" />
                   </div>
                   <div className="flex-1">
                     <div className="text-xs font-bold text-emerald-900">
-                      Next Agro Operation in Schedule
+                      {language === 'hi' ? 'अगला प्रस्तावित खेत कार्य' : 'Next Agro Operation in Schedule'}
                     </div>
                     <p className="text-xs text-stone-700 mt-0.5">
                       {selectedField.nextScheduledTask}
@@ -275,127 +308,35 @@ export const FieldManagement: React.FC<FieldManagementProps> = ({
                 </div>
               </div>
 
-              {/* Field Notes & Agronomist Diary */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center space-x-1">
-                    <FileText className="w-3.5 h-3.5 text-stone-500" />
-                    <span>Agronomist Field Notes</span>
+              {/* Navigation Return Links */}
+              {setCurrentPage && (
+                <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <span className="text-stone-600 font-medium">
+                    {language === 'hi' ? 'खेत परिपक्व होने पर अगली फसल योजना बनाएं:' : 'When plot harvest completes, plan next cycle:'}
                   </span>
-                  {editingNotesId !== selectedField.id && (
+                  <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => {
-                        setEditingNotesId(selectedField.id);
-                        setTempNotes(selectedField.notes);
-                      }}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer flex items-center space-x-1"
+                      onClick={() => setCurrentPage('intelligence')}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors cursor-pointer"
                     >
-                      <Edit3 className="w-3 h-3" />
-                      <span>Edit Notes</span>
+                      {language === 'hi' ? 'फसल बुद्धिमत्ता →' : 'Crop Intelligence →'}
                     </button>
-                  )}
-                </div>
-
-                {editingNotesId === selectedField.id ? (
-                  <div className="space-y-2">
-                    <textarea
-                      value={tempNotes}
-                      onChange={(e) => setTempNotes(e.target.value)}
-                      rows={3}
-                      className="w-full text-xs p-3 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Record fertilizer dosages, pest observations, seed germination rates..."
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={() => setEditingNotesId(null)}
-                        className="px-3 py-1.5 text-xs text-stone-600 rounded-lg hover:bg-stone-100 cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleSaveNotes(selectedField.id)}
-                        className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 cursor-pointer"
-                      >
-                        Save Notes
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setCurrentPage('assistant')}
+                      className="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-200 transition-colors cursor-pointer flex items-center space-x-1"
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                      <span>{language === 'hi' ? 'एआई सलाह' : 'Ask AI'}</span>
+                    </button>
                   </div>
-                ) : (
-                  <p className="text-xs text-stone-600 bg-stone-50 p-3 rounded-xl border border-stone-200/70 italic">
-                    "{selectedField.notes || 'No field notes logged yet. Click Edit Notes to add observations.'}"
-                  </p>
-                )}
-              </div>
+                </div>
+              )}
 
             </div>
           </div>
-        ) : (
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 p-12 text-center text-stone-500">
-            No fields currently registered. Click "Add New Field Plot" to start.
-          </div>
-        )}
+        ) : null}
 
       </div>
-
-      {/* Irrigation Logging Modal */}
-      {waterModalField && (
-        <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
-            <div className="flex items-center space-x-3 text-sky-600">
-              <div className="p-2 bg-sky-100 rounded-lg">
-                <Droplets className="w-5 h-5 text-sky-700" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-stone-900">Log Irrigation Cycle</h3>
-                <p className="text-xs text-stone-500">{waterModalField.name} ({waterModalField.crop})</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  Watering Duration / Volume
-                </label>
-                <select
-                  value={waterDuration}
-                  onChange={(e) => setWaterDuration(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-lg border border-stone-300 focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="30 mins">30 mins (Light Drip)</option>
-                  <option value="1 hour">1 hour (Standard Drip)</option>
-                  <option value="2 hours">2 hours (Full Soaking)</option>
-                  <option value="3 hours">3 hours (Canal Flooding)</option>
-                  <option value="4+ hours">4+ hours (Deep Root Zone)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  Method Used
-                </label>
-                <div className="text-xs bg-stone-100 p-2.5 rounded-lg text-stone-800 font-medium">
-                  {waterModalField.irrigationType} System
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-stone-100">
-              <button
-                onClick={() => setWaterModalField(null)}
-                className="px-4 py-2 text-xs font-medium text-stone-600 rounded-lg hover:bg-stone-100 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLogIrrigation}
-                className="px-4 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Confirm & Log
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

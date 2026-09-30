@@ -37,9 +37,14 @@ export const SchemesPage: React.FC<SchemesPageProps> = ({ farmProfile }) => {
           </p>
         </div>
 
-        <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-          Curated for Agra District
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+            Controlled Demo Dataset
+          </span>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+            Curated for Agra District
+          </span>
+        </div>
       </div>
 
       {/* Schemes Accordion List */}
