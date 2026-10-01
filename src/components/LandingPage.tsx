@@ -30,19 +30,6 @@ import {
   Scale
 } from 'lucide-react';
 
-import fh0 from '../fh0.png';
-import fh1 from '../fh1.png';
-import fh2 from '../fh2.png';
-import fh3 from '../fh3.png';
-import fh4 from '../fh4.png';
-import fh5 from '../fh5.png';
-import fh6 from '../fh6.png';
-import fh7 from '../fh7.png';
-import fh8 from '../fh8.png';
-
-const HERO_IMAGES = [fh0, fh1, fh2, fh3, fh4, fh5, fh6, fh7, fh8];
-const IMAGE_INTERVAL_MS = 850;
-const CROSSFADE_DURATION_MS = 300;
 
 interface LandingPageProps {
   setCurrentPage: (page: PageId) => void;
