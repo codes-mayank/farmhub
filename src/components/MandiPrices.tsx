@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MandiPrice } from '../types';
+import { PageId } from '../types/farmhub';
 import { 
   TrendingUp, 
   ArrowUpRight, 
@@ -15,10 +16,11 @@ import {
 } from 'lucide-react';
 
 interface MandiPricesProps {
-  mandiPrices: MandiPrice[];
+  mandiPrices?: MandiPrice[];
+  setCurrentPage?: (page: PageId) => void;
 }
 
-export const MandiPrices: React.FC<MandiPricesProps> = ({ mandiPrices }) => {
+export const MandiPrices: React.FC<MandiPricesProps> = ({ mandiPrices = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCommodity, setSelectedCommodity] = useState<string>('All');
   const [selectedState, setSelectedState] = useState<string>('All');

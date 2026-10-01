@@ -23,6 +23,8 @@ import { Marketplace } from './components/Marketplace';
 import { MandiPrices } from './components/MandiPrices';
 import { Sprout } from 'lucide-react';
 
+import { FarmLogo } from './components/FarmLogo';
+
 const AppContent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageId>('landing');
   const { language, t } = useLanguage();
@@ -38,17 +40,19 @@ const AppContent: React.FC = () => {
   }, [farmProfile]);
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#F5F7F2] flex flex-col font-sans selection:bg-[#14A66A] selection:text-white">
       {/* Top Main Navigation Bar */}
-      <HeaderNav
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        farmerName={farmProfile.farmerName}
-        location={farmProfile.location}
-      />
+      {currentPage !== 'landing' && (
+        <HeaderNav
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          farmerName={farmProfile.farmerName}
+          location={farmProfile.location}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className={currentPage === 'landing' ? 'flex-1 w-full overflow-hidden' : 'flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6'}>
         {currentPage === 'landing' && (
           <LandingPage setCurrentPage={setCurrentPage} />
         )}
@@ -134,89 +138,18 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      {/* Global Hackathon Demo Sticky Floating Switcher */}
-      <div className="sticky bottom-4 z-40 max-w-4xl mx-auto px-4 w-full pointer-events-none">
-        <div className="bg-stone-900/90 backdrop-blur-md text-white rounded-2xl p-2.5 px-4 shadow-xl border border-stone-700/60 flex items-center justify-between text-xs pointer-events-auto">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-extrabold text-[11px] uppercase tracking-wider text-emerald-300">
-              {language === 'hi' ? 'डेमो यात्रा:' : 'Demo Journey:'}
-            </span>
-          </div>
 
-          <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setCurrentPage('landing')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'landing' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              1. {language === 'hi' ? 'शुरुआत' : 'Landing'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('dashboard')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              2. {language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('profile')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'profile' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              3. {language === 'hi' ? 'प्रोफाइल' : 'Profile'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('intelligence')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'intelligence' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              4. {language === 'hi' ? 'बुद्धिमत्ता' : 'Intelligence'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('market')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'market' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              5. {language === 'hi' ? 'मंडी' : 'Market'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('emergency')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'emergency' ? 'bg-rose-600 text-white' : 'text-rose-300 hover:text-white'
-              }`}
-            >
-              6. {language === 'hi' ? 'आपातकाल' : 'Emergency'}
-            </button>
-            <button
-              onClick={() => setCurrentPage('assistant')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
-                currentPage === 'assistant' ? 'bg-indigo-600 text-white' : 'text-indigo-300 hover:text-white'
-              }`}
-            >
-              7. {language === 'hi' ? 'एआई सहायक' : 'AI Assistant'}
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Global Ecosystem Footer */}
-      <footer className="mt-12 bg-stone-900 text-stone-400 text-xs border-t border-stone-800">
+      {currentPage !== 'landing' && (
+        <footer className="mt-12 bg-[#063F32] text-stone-300 text-xs border-t border-[#087F5B]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pb-8 border-b border-stone-800">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-white font-bold text-base">
-                <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
-                  <Sprout className="w-4 h-4" />
-                </div>
-                <span>Farm<span className="text-emerald-500">Hub</span></span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pb-8 border-b border-[#087F5B]/30">
+            <div className="space-y-3">
+              <div className="flex items-center text-white font-bold text-base">
+                <FarmLogo size="md" />
               </div>
-              <p className="text-stone-400 text-xs leading-relaxed">
+              <p className="text-stone-300 text-xs leading-relaxed">
                 {t.heroDesc}
               </p>
             </div>
@@ -266,6 +199,7 @@ const AppContent: React.FC = () => {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 };

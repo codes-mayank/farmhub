@@ -191,6 +191,47 @@ export interface Translations {
   toolMarketplaceTitle: string;
   toolMarketplaceDesc: string;
   demoDisclaimerTag: string;
+
+  // Market Page & Emergency Additional Keys
+  marketHeaderTitle: string;
+  marketHeaderDesc: string;
+  marketSearchPlaceholder: string;
+  cropCol: string;
+  mandiCol: string;
+  priceCol: string;
+  demandCol: string;
+  trendCol: string;
+  mspCol: string;
+  actionCol: string;
+  viewBuyersBtn: string;
+  verifiedBuyersTitle: string;
+  emergencyBannerTitle: string;
+  emergencyForecastText: string;
+  recommends5Title: string;
+  recommends5Desc: string;
+  action1: string;
+  action1Desc: string;
+  action2: string;
+  action2Desc: string;
+  action3: string;
+  action3Desc: string;
+  action4: string;
+  action4Desc: string;
+  action5: string;
+  action5Desc: string;
+  findMachineryBtn: string;
+  findLabourBtn: string;
+  findStorageBtn: string;
+  findTransportBtn: string;
+  findBuyersBtn: string;
+  deployNowBtn: string;
+
+  // AI Assistant Additional Keys
+  aiTitle: string;
+  aiSub: string;
+  clearChatBtn: string;
+  suggestedLabel: string;
+  inputPlaceholder: string;
 }
 
 export const translations: Record<Language, Translations> = {
