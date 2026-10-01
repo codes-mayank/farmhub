@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PageId, FarmProfileData } from './types/farmhub';
 import { DEFAULT_FARM_PROFILE } from './data/centralData';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { FarmProvider } from './context/FarmContext';
 import { HeaderNav } from './components/HeaderNav';
 import { LandingPage } from './components/LandingPage';
 import { FarmerDashboard } from './components/FarmerDashboard';
@@ -272,7 +273,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <LanguageProvider>
-      <AppContent />
+      <FarmProvider>
+        <AppContent />
+      </FarmProvider>
     </LanguageProvider>
   );
 };
