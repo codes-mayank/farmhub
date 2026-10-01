@@ -46,7 +46,7 @@ const DEFAULT_PEST_DISEASES: PestDisease[] = [
     id: 'pest-2',
     name: 'Mustard Aphids (Mahu)',
     crop: 'Mustard',
-    type: 'Pest Insect',
+    type: 'Pest/Insect',
     severity: 'Moderate',
     symptoms: [
       'Clusters of green-black tiny sap-sucking insects on inflorescence & young pods.',

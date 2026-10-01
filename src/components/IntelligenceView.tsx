@@ -115,20 +115,27 @@ export const IntelligenceView: React.FC = () => {
             />
           </div>
 
-          {/* Top 3 Crop Recommendation Cards (Section 14 & 15) */}
+          {/* Top 3 Crop Recommendation Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {data.recommendations.map((rec) => (
               <div
                 key={rec.crop}
-                className="bg-white border rounded-xl p-5 shadow-sm flex flex-col justify-between"
+                className="bg-white border rounded-xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
               >
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h2 className="text-xl font-bold text-gray-900">{rec.crop}</h2>
-                      <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                        {Math.round(rec.suitabilityScore * 100)}% Suitability
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                          {Math.round(rec.suitabilityScore * 100)}/100 Rec Score
+                        </span>
+                        {rec.mlProbabilityPct !== undefined && (
+                          <span className="text-[11px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                            ML Prob: {rec.mlProbabilityPct}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span
                       className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
@@ -179,8 +186,13 @@ export const IntelligenceView: React.FC = () => {
             ))}
           </div>
 
-          <div className="text-xs text-gray-400 italic">
-            * Some market, weather and profitability values shown in this prototype are simulated for demonstration purposes.
+          <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-200 gap-2">
+            <div>
+              💡 <strong>Terminology Note:</strong> <em>ML Prob</em> represents Scikit-Learn RandomForest agronomic prediction probability. <em>Rec Score</em> combines ML signals with Agra mandi market demand, profit bounds, and crop rotation logic.
+            </div>
+            <div className="font-semibold text-emerald-700 shrink-0">
+              Controlled Demo Dataset
+            </div>
           </div>
         </div>
       )}

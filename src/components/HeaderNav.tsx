@@ -1,8 +1,8 @@
 import React from 'react';
 import { PageId } from '../types/farmhub';
 import { useLanguage } from '../context/LanguageContext';
+import { FarmLogo } from './FarmLogo';
 import { 
-  Sprout, 
   LayoutDashboard, 
   MapPin, 
   BrainCircuit, 
@@ -47,16 +47,16 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
+    <header className="sticky top-0 z-50 bg-[#F5F7F2]/90 backdrop-blur-md border-b border-[#087F5B]/15 shadow-xs">
       {/* Top Banner with Demo Context & Language Switcher */}
-      <div className="bg-emerald-950 text-emerald-100 text-xs py-1.5 px-4 sm:px-6">
+      <div className="bg-[#063F32] text-stone-100 text-xs py-1.5 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           
           <div className="flex items-center space-x-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-800 text-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#087F5B] text-emerald-100 text-[10px] font-bold uppercase tracking-wider">
               {language === 'hi' ? 'आगरा पायलट डेमो' : 'Agra Pilot Demo'}
             </span>
-            <span className="text-emerald-200/90 text-xs font-medium truncate">
+            <span className="text-emerald-100/90 text-xs font-medium truncate">
               {t.demoFarmerLabel}: <strong className="text-white">{farmerName}</strong> • {location} • 5 Acres ({language === 'hi' ? 'दोमट मिट्टी / सिंचित' : 'Loamy Soil / Irrigated'})
             </span>
           </div>
@@ -64,20 +64,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <div className="flex items-center space-x-3 text-xs">
             <button
               onClick={() => setCurrentPage('emergency')}
-              className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-rose-600/90 text-white font-bold text-[11px] animate-pulse hover:bg-rose-500 cursor-pointer transition-colors"
+              className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-[#E85D5D] text-white font-bold text-[11px] animate-pulse hover:bg-rose-600 cursor-pointer transition-colors shadow-xs"
             >
               <AlertTriangle className="w-3 h-3" />
               <span>{t.emergencyWarningTicker}</span>
             </button>
 
             {/* Language Toggle Capsule */}
-            <div className="flex items-center bg-emerald-900/90 rounded-full p-0.5 border border-emerald-700/60 shadow-xs">
+            <div className="flex items-center bg-[#063F32]/80 rounded-full p-0.5 border border-[#14A66A]/40 shadow-xs">
               <button
                 onClick={() => setLanguage('en')}
                 className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold transition-all cursor-pointer ${
                   language === 'en'
-                    ? 'bg-emerald-500 text-stone-950 shadow-xs'
-                    : 'text-emerald-200 hover:text-white'
+                    ? 'bg-[#F2B544] text-[#063F32] shadow-xs'
+                    : 'text-emerald-100 hover:text-white'
                 }`}
               >
                 EN
@@ -86,8 +86,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 onClick={() => setLanguage('hi')}
                 className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold transition-all cursor-pointer ${
                   language === 'hi'
-                    ? 'bg-emerald-500 text-stone-950 shadow-xs'
-                    : 'text-emerald-200 hover:text-white'
+                    ? 'bg-[#F2B544] text-[#063F32] shadow-xs'
+                    : 'text-emerald-100 hover:text-white'
                 }`}
               >
                 हिन्दी
@@ -105,21 +105,14 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           {/* Logo */}
           <div 
             onClick={() => setCurrentPage('landing')}
-            className="flex items-center space-x-2.5 cursor-pointer group"
+            className="flex items-center space-x-3 cursor-pointer group py-1"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 group-hover:scale-105 transition-transform">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xl font-extrabold tracking-tight text-stone-900 font-sans">
-                  Farm<span className="text-emerald-600">Hub</span>
-                </span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800">
-                  {language === 'hi' ? 'इकोसिस्टम' : 'Ecosystem'}
-                </span>
-              </div>
-              <p className="text-[10px] text-stone-500 font-semibold -mt-0.5">
+            <FarmLogo size="md" className="group-hover:scale-105 transition-transform" />
+            <div className="hidden sm:flex flex-col justify-center border-l border-emerald-900/20 dark:border-emerald-500/20 pl-2.5">
+              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-[#F2B544]/20 text-[#8B5E3C] border border-[#F2B544]/40 w-max">
+                {language === 'hi' ? 'इकोसिस्टम' : 'Ecosystem'}
+              </span>
+              <p className="text-[10px] text-[#087F5B] dark:text-emerald-400 font-semibold mt-0.5 whitespace-nowrap">
                 {language === 'hi' ? 'कृषि निर्णय प्रणाली' : 'Agricultural Decision Engine'}
               </p>
             </div>

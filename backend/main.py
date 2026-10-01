@@ -2,33 +2,46 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
-app = FastAPI(title="FarmHub Intelligence Engine")
+app = FastAPI(
+    title="FarmHub Intelligence Engine",
+    description="Agronomic ML Inference & Hybrid Decision Microservice for FarmHub Demo",
+    version="1.0.0"
+)
 
-# CORS Setup for Next.js (Localhost and Vercel)
+# Configurable CORS for Production vs Local Development
+allowed_origins_env = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if os.getenv("NODE_ENV") == "production" else ["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "crop_model.pkl")
 DATA_PATH = os.path.join(os.path.dirname(__file__), "crop_data.csv")
 
-# Ensure model exists on startup
-if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) == 0:
+# Load model safely
+ml_model = None
+if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 0:
+    try:
+        ml_model = joblib.load(MODEL_PATH)
+    except Exception as e:
+        print(f"Warning: Failed to load model from {MODEL_PATH}: {e}")
+
+if ml_model is None:
     from train_model import train_and_save
     train_and_save()
+    ml_model = joblib.load(MODEL_PATH)
 
-ml_model = joblib.load(MODEL_PATH)
-
-# Model 2 Market Benchmarks (Agra / Western UP CACP norms)
+# Market Benchmarks (Agra / Western UP CACP norms)
 MARKET_BENCHMARKS = {
     "mustard": {"yield_acre": 8.5, "cost_acre": 14500, "base_price": 5600, "base_supply": 420000, "demand_idx": 0.88, "weather_fragility": 0.35},
     "chickpea": {"yield_acre": 7.2, "cost_acre": 13000, "base_price": 5300, "base_supply": 210000, "demand_idx": 0.76, "weather_fragility": 0.30},
@@ -39,35 +52,46 @@ MARKET_BENCHMARKS = {
 }
 
 class FarmAnalysisRequest(BaseModel):
-    location: str
-    area: float
-    soil: str
-    waterAvailability: str
-    previousCrop: str
+    location: str = Field(..., description="Farmer district/location name")
+    area: float = Field(..., gt=0, le=500, description="Farm size in acres (must be > 0)")
+    soil: str = Field(..., description="Soil classification (e.g. Loamy, Sandy Loam)")
+    waterAvailability: str = Field(..., description="Irrigation status")
+    previousCrop: str = Field(..., description="Previous season harvested crop")
     season: Optional[str] = "Rabi"
-    extraSupplyPct: Optional[float] = 0.0  # Feedback loop simulation parameter
+    extraSupplyPct: Optional[float] = Field(0.0, ge=0, le=100, description="Simulated district adoption surge percentage")
 
 @app.get("/health")
 def health():
-    return {"status": "healthy", "service": "FarmHub Intelligence"}
+    return {
+        "status": "healthy",
+        "service": "FarmHub Intelligence Engine",
+        "modelLoaded": ml_model is not None,
+        "mode": "Demo Baseline"
+    }
 
 @app.post("/api/analyze")
 def analyze_farm(req: FarmAnalysisRequest):
-    global ml_model
+    if ml_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ML Model service currently unavailable"
+        )
 
-    # 1. Map Farmer Qualitative Inputs to NPK & Weather
+    # 1. Map Farmer Qualitative Inputs to NPK & Weather Parameters
     soil_map = {
         "Loamy": {"n": 65, "p": 45, "k": 40, "ph": 7.1},
         "Sandy Loam": {"n": 50, "p": 35, "k": 30, "ph": 6.8},
         "Clayey": {"n": 80, "p": 50, "k": 60, "ph": 7.5},
+        "Clay": {"n": 80, "p": 50, "k": 60, "ph": 7.5},
+        "Black Soil": {"n": 75, "p": 55, "k": 50, "ph": 7.4},
         "Alluvial": {"n": 70, "p": 40, "k": 45, "ph": 7.2},
     }
     s = soil_map.get(req.soil, soil_map["Loamy"])
-    rain = 65.0 if req.waterAvailability == "Irrigated" else 35.0
+    rain = 65.0 if "Irrigated" in req.waterAvailability or "Borewell" in req.waterAvailability else 35.0
     temp = 20.5
     humidity = 62.0
 
-    # 2. Model 1: Real ML Inference via predict_proba
+    # 2. ML Inference via predict_proba
     features = pd.DataFrame([{
         "N": s["n"], "P": s["p"], "K": s["k"],
         "temperature": temp, "humidity": humidity, "ph": s["ph"], "rainfall": rain
@@ -82,8 +106,8 @@ def analyze_farm(req: FarmAnalysisRequest):
     for idx in sorted_indices:
         crop_name = str(classes[idx]).lower()
         agronomic_prob = float(probs[idx])
+        ml_prob_pct = int(round(agronomic_prob * 100))
 
-        # Model 2: Profit & Downside Risk Engine
         b = MARKET_BENCHMARKS.get(crop_name, {
             "yield_acre": 8.0, "cost_acre": 15000, "base_price": 4500,
             "base_supply": 300000, "demand_idx": 0.60, "weather_fragility": 0.40
@@ -104,7 +128,7 @@ def analyze_farm(req: FarmAnalysisRequest):
         profit_expected = round(total_yield * expected_price - total_cost)
         profit_max = round(total_yield * max_price - total_cost)
 
-        # Explainable score calculation
+        # Explainable Composite Score calculation
         agronomic_score = int(agronomic_prob * 40)
         demand_score = 25 if b["demand_idx"] > 0.8 else 15
         profit_score = 25 if profit_expected > 30000 else 15
@@ -119,6 +143,7 @@ def analyze_farm(req: FarmAnalysisRequest):
 
         recommendations.append({
             "crop": crop_name.capitalize(),
+            "mlProbabilityPct": ml_prob_pct,
             "suitabilityScore": round(composite_score / 100, 2),
             "suitabilityLabel": "High" if composite_score > 75 else ("Medium" if composite_score > 50 else "Low"),
             "expectedYieldQuintals": round(total_yield, 1),
@@ -131,9 +156,9 @@ def analyze_farm(req: FarmAnalysisRequest):
             "projectedSupplyQuintals": int(b["base_supply"] * (1 + req.extraSupplyPct / 100)),
             "riskLevel": risk_label,
             "riskReasons": [
-                f"Agronomic ML confidence: {int(agronomic_prob * 100)}%",
-                "Suitable for loamy irrigated conditions",
-                f"Upfront operational cost: ₹{total_cost:,}"
+                f"ML Prediction Probability: {ml_prob_pct}%",
+                f"Ideal for {req.soil.lower()} soil & {req.waterAvailability.lower()} conditions",
+                f"Upfront operational cost: ₹{int(total_cost):,}"
             ]
         })
 
@@ -144,11 +169,24 @@ def analyze_farm(req: FarmAnalysisRequest):
         "supplyFeedback": {
             "adoptionRatePct": req.extraSupplyPct,
             "projectedRegionalSupply": int(420000 * (1 + req.extraSupplyPct / 100))
+        },
+        "metadata": {
+            "engine": "FarmHub Hybrid Intelligence Engine",
+            "mlModel": "RandomForestClassifier (100 Decision Trees)",
+            "isDemoDataset": True
         }
     }
 
 @app.post("/api/retrain")
-def retrain_endpoint(background_tasks: BackgroundTasks):
+def retrain_endpoint():
+    # Demo safety: Disable public model retraining to prevent disk overwrite in production
+    allow_retrain = os.getenv("ENABLE_DEMO_RETRAIN", "false").lower() == "true"
+    if not allow_retrain:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Public model retraining is disabled in demo configuration. Use train_model.py for local development."
+        )
     from train_model import train_and_save
-    background_tasks.add_task(train_and_save)
-    return {"message": "Retraining task scheduled in background"}
+    train_and_save()
+    return {"message": "Retraining task completed successfully"}
+

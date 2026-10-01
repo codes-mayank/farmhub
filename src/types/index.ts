@@ -84,7 +84,7 @@ export interface PestDisease {
   organicControl: string;
   dosage: string;
   preventionTips: string;
-  imageUrl: string;
+  imageUrl?: string;
 }
 
 export interface SoilTestResult {

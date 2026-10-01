@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ProduceListing, EquipmentListing } from '../types';
+import { FarmProfileData, PageId } from '../types/farmhub';
 import { 
   ShoppingBag, 
   Tractor, 
@@ -18,14 +19,16 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 
 interface MarketplaceProps {
-  produceListings: ProduceListing[];
-  equipmentListings: EquipmentListing[];
-  onOpenProduceModal: () => void;
+  produceListings?: ProduceListing[];
+  equipmentListings?: EquipmentListing[];
+  onOpenProduceModal?: () => void;
+  farmProfile?: FarmProfileData;
+  setCurrentPage?: (page: PageId) => void;
 }
 
 export const Marketplace: React.FC<MarketplaceProps> = ({
-  produceListings,
-  equipmentListings,
+  produceListings = [],
+  equipmentListings = [],
   onOpenProduceModal
 }) => {
   const { language, t } = useLanguage();

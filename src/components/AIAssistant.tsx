@@ -155,7 +155,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ farmProfile, setCurren
             points: [
               `शीर्ष पसंद: ${top.hindiName} - समग्र स्कोर ${top.score}/१०० (उपयुक्तता: ${top.soilSuitabilityScore}%)।`,
               `अनुमानित ५ एकड़ शुद्ध मुनाफा: ₹${top.expectedProfitMin?.toLocaleString('en-IN')} – ₹${top.expectedProfitMax?.toLocaleString('en-IN')}।`,
-              `क्षेत्रीय मांग: ${top.regionalDemandIndex}/१०० (आगरा तेल मिलों में इन्वेंट्री कमी के कारण उच्च मांग)।`,
+              `क्षेत्रीय मांग: ${top.currentRegionalDemandIndex}/१०० (आगरा तेल मिलों में इन्वेंट्री कमी के कारण उच्च मांग)।`,
               `फसल चक्र लाभ: ${farm.previousCrop} के बाद कीट चक्र तोड़ता है व ४०% कम पानी लेता है।`
             ]
           },
@@ -176,7 +176,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ farmProfile, setCurren
           points: [
             `Top Choice: ${top.name} (${top.hindiName}) with a composite score of ${top.score}/100 (${top.soilSuitabilityScore}% suitability).`,
             `Expected 5-Acre Profit Range: ₹${top.expectedProfitMin?.toLocaleString('en-IN')} – ₹${top.expectedProfitMax?.toLocaleString('en-IN')}.`,
-            `Regional Demand Index: ${top.regionalDemandIndex}/100 (high crusher demand in Agra district).`,
+            `Regional Demand Index: ${top.currentRegionalDemandIndex}/100 (high crusher demand in Agra district).`,
             `Rotation Synergy: Excellent disease-break cycle following ${farm.previousCrop} with 40% less water usage.`
           ]
         },

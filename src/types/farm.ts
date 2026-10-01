@@ -11,6 +11,7 @@ export interface FarmProfile {
 
 export interface Recommendation {
   crop: string;
+  mlProbabilityPct?: number;
   suitabilityScore: number;
   suitabilityLabel: "High" | "Medium" | "Low";
   expectedYieldQuintals: number;
@@ -31,4 +32,10 @@ export interface AnalysisResponse {
     adoptionRatePct: number;
     projectedRegionalSupply: number;
   };
+  metadata?: {
+    engine: string;
+    mlModel: string;
+    isDemoDataset: boolean;
+  };
 }
+

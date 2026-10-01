@@ -26,6 +26,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
   const list: Recommendation[] = [
     {
       crop: "Mustard",
+      mlProbabilityPct: 94,
       suitabilityScore: 0.88 - (extraSupplyPct > 15 ? 0.08 : 0),
       suitabilityLabel: "High",
       expectedYieldQuintals: Math.round(8.5 * area * 10) / 10,
@@ -38,6 +39,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
       projectedSupplyQuintals: Math.round(420000 * (1 + extraSupplyPct / 100)),
       riskLevel: extraSupplyPct > 20 ? "Medium" : "Low",
       riskReasons: [
+        "ML Prediction Probability: 94%",
         "Optimal compatibility with loamy soil",
         isWheatPre ? "Excellent nitrogen cycle rotation after wheat" : "Favorable crop rotation",
         "Strong regional oilseed processing demand in Agra",
@@ -45,6 +47,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
     },
     {
       crop: "Chickpea",
+      mlProbabilityPct: 82,
       suitabilityScore: 0.79,
       suitabilityLabel: "High",
       expectedYieldQuintals: Math.round(7.2 * area * 10) / 10,
@@ -57,6 +60,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
       projectedSupplyQuintals: 210000,
       riskLevel: "Low",
       riskReasons: [
+        "ML Prediction Probability: 82%",
         "Low water requirement suited for irrigated Rabi",
         "MSP-supported pulse procurement",
         "Low upfront capital risk",
@@ -64,6 +68,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
     },
     {
       crop: "Potato",
+      mlProbabilityPct: 68,
       suitabilityScore: 0.72 - (extraSupplyPct > 10 ? 0.05 : 0),
       suitabilityLabel: "Medium",
       expectedYieldQuintals: Math.round(110 * area),
@@ -76,6 +81,7 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
       projectedSupplyQuintals: Math.round(2400000 * (1 + extraSupplyPct / 100)),
       riskLevel: "High",
       riskReasons: [
+        "ML Prediction Probability: 68%",
         "High seed and cold-storage capital expenditure",
         "Susceptible to late blight and unseasonal winter rain",
         "High price volatility near harvesting peak",
@@ -89,6 +95,11 @@ function getFallbackData(farm: AnyFarm, extraSupplyPct: number = 0): AnalysisRes
       adoptionRatePct: extraSupplyPct,
       projectedRegionalSupply: Math.round(420000 * (1 + extraSupplyPct / 100)),
     },
+    metadata: {
+      engine: "FarmHub Intelligence Engine (Deterministic Fallback)",
+      mlModel: "Scikit-Learn Pre-calculated Baseline",
+      isDemoDataset: true
+    }
   };
 }
 
