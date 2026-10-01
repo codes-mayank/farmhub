@@ -47,6 +47,8 @@ interface FarmIntelligenceProps {
   setCurrentPage?: (page: PageId) => void;
 }
 
+import { fetchFarmIntelligence } from '../lib/api/intelligenceService';
+
 export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile, setCurrentPage }) => {
   const { language, t } = useLanguage();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -59,10 +61,23 @@ export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile,
     generateRecommendations(farmProfile, 0)
   );
 
-  // Dynamic recalculation when farmProfile or adoptionShift changes
+  // Dynamic recalculation via Backend ML Model API + Local Fallback
   useEffect(() => {
-    const res = generateRecommendations(farmProfile, adoptionShift);
-    setIntelResult(res);
+    let isSubscribed = true;
+    fetchFarmIntelligence(farmProfile, adoptionShift).then((apiData) => {
+      if (!isSubscribed) return;
+      const res = generateRecommendations(farmProfile, adoptionShift);
+      if (apiData && apiData.recommendations && apiData.recommendations.length > 0) {
+        // Merge model ML scores into topRecommendations
+        const mlTopNames = apiData.recommendations.map(r => r.crop.toLowerCase());
+        res.topRecommendations = res.allRankedCrops.filter(c => mlTopNames.includes(c.name.toLowerCase())).slice(0, 3);
+        if (res.topRecommendations.length === 0) {
+          res.topRecommendations = res.allRankedCrops.slice(0, 3);
+        }
+      }
+      setIntelResult(res);
+    });
+    return () => { isSubscribed = false; };
   }, [farmProfile, adoptionShift]);
 
   const pipelineStages = [
@@ -101,6 +116,19 @@ export const FarmIntelligence: React.FC<FarmIntelligenceProps> = ({ farmProfile,
     setIsAnalyzing(true);
     setAnalysisStep(0);
     setHasAnalyzed(false);
+
+    // Explicitly trigger POST request to Python ML Model backend API
+    fetchFarmIntelligence(farmProfile, adoptionShift).then((apiData) => {
+      const res = generateRecommendations(farmProfile, adoptionShift);
+      if (apiData && apiData.recommendations && apiData.recommendations.length > 0) {
+        const mlTopNames = apiData.recommendations.map(r => r.crop.toLowerCase());
+        res.topRecommendations = res.allRankedCrops.filter(c => mlTopNames.includes(c.name.toLowerCase())).slice(0, 3);
+        if (res.topRecommendations.length === 0) {
+          res.topRecommendations = res.allRankedCrops.slice(0, 3);
+        }
+      }
+      setIntelResult(res);
+    });
 
     let step = 0;
     const interval = setInterval(() => {
